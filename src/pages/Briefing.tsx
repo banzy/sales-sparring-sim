@@ -32,8 +32,8 @@ export default function Briefing() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-3.5 w-3.5 text-primary" />
+              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client Profile</CardTitle>
             </div>
@@ -60,8 +60,8 @@ export default function Briefing() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Target className="h-3.5 w-3.5 text-primary" />
+              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                <Target className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Value Proposition</CardTitle>
             </div>
@@ -79,8 +79,8 @@ export default function Briefing() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Shield className="h-3.5 w-3.5 text-primary" />
+              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                <Shield className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Buying Constraints</CardTitle>
             </div>
@@ -88,7 +88,7 @@ export default function Briefing() {
           <CardContent className="space-y-2.5 text-sm">
             {["Board approval required > $50k", "SOC 2 Type II compliance mandatory", "Must integrate with Salesforce", "3-year contract minimum preferred"].map((c, i) => (
               <div key={i} className="flex items-start gap-2.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
                 <span className="text-muted-foreground">{c}</span>
               </div>
             ))}

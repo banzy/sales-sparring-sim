@@ -24,7 +24,7 @@ export default function ContextSetup() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
-        <div className="h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center animate-pulse-slow">
+        <div className="h-20 w-20 rounded-3xl bg-muted flex items-center justify-center animate-pulse-slow">
           <Loader2 className="h-10 w-10 text-primary animate-spin" />
         </div>
         <div className="text-center space-y-2">
@@ -35,7 +35,7 @@ export default function ContextSetup() {
         </div>
         <div className="flex gap-2 mt-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-1.5 w-16 rounded-full bg-primary/15 overflow-hidden">
+            <div key={i} className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full animate-pulse"
                 style={{ animationDelay: `${i * 0.4}s` }}
@@ -61,8 +61,8 @@ export default function ContextSetup() {
         <Card className="glass-card hover:shadow-md transition-all">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Upload className="h-5 w-5 text-primary" />
+              <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center">
+                <Upload className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <CardTitle className="text-base">Upload Existing Knowledge</CardTitle>
@@ -94,8 +94,8 @@ export default function ContextSetup() {
         <Card className="glass-card hover:shadow-md transition-all">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-accent flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-accent-foreground" />
+              <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <CardTitle className="text-base">Generate Synthetic Client</CardTitle>
