@@ -1,0 +1,72 @@
+[
+  {
+    "doc_id": "syn_ed5ecf3c",
+    "source_type": "synthetic",
+    "title": "AI Engineering Services Overview",
+    "doc_type": "service_catalog",
+    "industry": [
+      "all"
+    ],
+    "buyer_persona": [
+      "CIO",
+      "CTO",
+      "COO"
+    ],
+    "service_line": [
+      "ai_engineering"
+    ],
+    "text": "We provide end-to-end AI engineering services, specializing in LLM integration, custom RAG pipelines, and intelligent document processing. Our typical deployment timeline is 8-12 weeks."
+  },
+  {
+    "doc_id": "syn_c87449d8",
+    "source_type": "synthetic",
+    "title": "Case Study: Logistics Document Automation",
+    "doc_type": "case_study",
+    "industry": [
+      "logistics",
+      "supply_chain"
+    ],
+    "buyer_persona": [
+      "COO",
+      "Head of Operations"
+    ],
+    "service_line": [
+      "document_automation"
+    ],
+    "text": "A global logistics provider was drowning in manual waybill and invoice processing (30,000+ docs/month). We deployed a vision-language model (VLM) pipeline that extracts unstructured data with 99.2% accuracy. Result: 60% reduction in processing time and $1.2M annual savings. ROI achieved in 4.5 months."
+  },
+  {
+    "doc_id": "syn_354d9d36",
+    "source_type": "synthetic",
+    "title": "Handling the 'ROI is too slow' Objection",
+    "doc_type": "objection_handling",
+    "industry": [
+      "all"
+    ],
+    "sales_stage": "solutioning",
+    "text": "If a buyer pushes back on time-to-value, emphasize our modular approach. We don't do 2-year mega-projects. We identify the highest-friction workflow (usually invoice processing or customer inquiry routing), build a PoC in 4 weeks, and put it in production by week 10. The quick win funds the rest of the roadmap."
+  },
+  {
+    "doc_id": "syn_00db1d85",
+    "source_type": "synthetic",
+    "title": "Security and Compliance FAQ",
+    "doc_type": "faq",
+    "industry": [
+      "finance",
+      "healthcare",
+      "logistics"
+    ],
+    "buyer_persona": [
+      "CISO",
+      "CIO"
+    ],
+    "text": "Data Privacy: We do not train foundation models on your proprietary data. All inference happens within your VPC or a dedicated tenant. We are SOC 2 Type II compliant and GDPR ready. Data is encrypted AT REST (AES-256) and IN TRANSIT (TLS 1.3)."
+  },
+  {
+    "doc_id": "syn_1775245e",
+    "source_type": "synthetic",
+    "title": "Why Not Just Use Off-the-Shelf Tools?",
+    "doc_type": "competitor_comparison",
+    "text": "Buyers often ask why they can't just use Microsoft Copilot or generic ChatGPT. Our response: Generic tools are great for generic tasks (writing emails). But they hallucinate on 50-page complex technical PDFs, and they don't integrate cleanly with your legacy ERP systems. We build bespoke pipelines that understand your specific domain taxonomy and trigger real internal actions."
+  }
+]

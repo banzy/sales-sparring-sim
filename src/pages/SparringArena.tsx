@@ -8,6 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useAppStore, type Message } from "@/store";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type InputMode = "text" | "recording" | "processing";
 
@@ -53,40 +55,72 @@ function AudioWaveform() {
 export default function SparringArena() {
   const navigate = useNavigate();
   const { sparringSession, addMessage, startSparringSession, endSparringSession, updateSessionStats } = useAppStore();
-  
+
   const [input, setInput] = useState("");
   const [inputMode, setInputMode] = useState<InputMode>("text");
   const [recordingStart, setRecordingStart] = useState(0);
-  
+
   useEffect(() => {
     if (!sparringSession.isActive) {
       startSparringSession();
     }
   }, [sparringSession.isActive, startSparringSession]);
 
-  const handleSend = (content?: string) => {
+  const { toast } = useToast();
+  // @ts-ignore
+  const scenarioId = useAppStore(state => state.contextSetup.scenarioId);
+
+  const handleSend = async (content?: string) => {
     const text = content || input.trim();
     if (!text) return;
-    
-    const newMsg: Message = { 
-      id: sparringSession.messages.length + 1, 
-      role: "seller", 
+
+    if (!scenarioId) {
+      toast({ variant: "destructive", title: "Missing Scenario context. Go back to setup." });
+      return;
+    }
+
+    const newMsg: Message = {
+      id: sparringSession.messages.length + 1,
+      role: "seller",
       content: text,
       timestamp: Date.now()
     };
+
     addMessage(newMsg);
     setInput("");
-    setInputMode("text");
+    setInputMode("processing");
 
-    setTimeout(() => {
+    try {
+      // Include the message we just added to state, along with previous history
+      const historyToSend = [...sparringSession.messages, newMsg];
+
+      const response = await api.sparringChat(scenarioId, historyToSend, text);
+
       const buyerMsg: Message = {
-        id: sparringSession.messages.length + 2,
+        id: historyToSend.length + 1,
         role: "buyer",
-        content: "Interesting point. But how do you justify that timeline given our compliance requirements? We can't afford a delay.",
+        content: response.buyer_response,
         timestamp: Date.now()
       };
+
       addMessage(buyerMsg);
-    }, 1500);
+
+      // Update objections triggered
+      if (response.objections_triggered && response.objections_triggered.length > 0) {
+        response.objections_triggered.forEach((obj: any) => {
+          useAppStore.getState().markObjectionTested(obj.id);
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Communication Error",
+        description: err.message || "Failed to reach the sparring engine.",
+      });
+    } finally {
+      setInputMode("text");
+    }
   };
 
   const startRecording = () => {
@@ -125,20 +159,18 @@ export default function SparringArena() {
                 className={`flex gap-3 ${msg.role === "seller" ? "flex-row-reverse" : ""}`}
               >
                 <div
-                  className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
-                    msg.role === "buyer"
+                  className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${msg.role === "buyer"
                       ? "bg-muted text-muted-foreground"
                       : "bg-muted text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   {msg.role === "buyer" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                 </div>
                 <div
-                  className={`rounded-2xl px-4 py-3 text-sm max-w-[80%] ${
-                    msg.role === "buyer"
+                  className={`rounded-2xl px-4 py-3 text-sm max-w-[80%] ${msg.role === "buyer"
                       ? "bg-card border border-border text-foreground rounded-tl-md"
                       : "bg-primary text-primary-foreground rounded-tr-md"
-                  }`}
+                    }`}
                 >
                   {msg.content}
                 </div>

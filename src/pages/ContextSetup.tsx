@@ -8,30 +8,70 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/store";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ContextSetup() {
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const navigate = useNavigate();
-  
+
   const { contextSetup, setContextSetup } = useAppStore();
   const [clientName, setClientName] = useState(contextSetup.clientName || '');
   const [industry, setIndustry] = useState(contextSetup.industry || '');
   const [painPoints, setPainPoints] = useState(contextSetup.painPoints || '');
 
-  const handleProcess = (mode: 'upload' | 'synthetic') => {
+  const { toast } = useToast();
+
+  const handleProcess = async (mode: 'upload' | 'synthetic') => {
     setContextSetup({
       mode,
       clientName: mode === 'synthetic' ? clientName : undefined,
       industry: mode === 'synthetic' ? industry : undefined,
       painPoints: mode === 'synthetic' ? painPoints : undefined,
     });
-    
+
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      if (mode === 'synthetic') {
+        const briefingData = await api.generateClient(clientName, industry, painPoints);
+
+        // Save the scenario ID in context setup so arena can use it,
+        // and save the rest of the briefing data into the briefing store.
+        setContextSetup({
+          mode,
+          clientName,
+          industry,
+          painPoints,
+          // @ts-ignore
+          scenarioId: briefingData.scenario_id,
+        });
+
+        // Remove scenario_id from briefing before storing it as the types mismatch slightly
+        const { scenario_id, ...pureBriefing } = briefingData;
+
+        // @ts-ignore
+        useAppStore.getState().setBriefing(pureBriefing);
+
+        navigate("/briefing");
+      } else {
+        // Upload mode not yet wired to backend
+        setTimeout(() => {
+          setLoading(false);
+          toast({ variant: "destructive", title: "Upload mode not implemented yet" })
+        }, 1000);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: err.message || "Failed to generate synthetic scenario.",
+      });
+    } finally {
       setLoading(false);
-      navigate("/briefing");
-    }, 2500);
+    }
   };
 
   if (loading) {
@@ -120,9 +160,9 @@ export default function ContextSetup() {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="client-name" className="text-xs font-medium">Target Client Name</Label>
-                <Input 
-                  id="client-name" 
-                  placeholder="e.g. Acme Corp" 
+                <Input
+                  id="client-name"
+                  placeholder="e.g. Acme Corp"
                   className="rounded-xl"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
@@ -146,10 +186,10 @@ export default function ContextSetup() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pain-points" className="text-xs font-medium">Specific Requirements or Pain Points</Label>
-                <Textarea 
-                  id="pain-points" 
-                  placeholder="Describe the client's challenges..." 
-                  rows={3} 
+                <Textarea
+                  id="pain-points"
+                  placeholder="Describe the client's challenges..."
+                  rows={3}
                   className="rounded-xl"
                   value={painPoints}
                   onChange={(e) => setPainPoints(e.target.value)}

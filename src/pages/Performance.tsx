@@ -5,30 +5,67 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useAppStore } from "@/store";
+import { api } from "@/lib/api";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function Performance() {
   const { performance, sparringSession, setPerformance } = useAppStore();
-  
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  // @ts-ignore
+  const scenarioId = useAppStore(state => state.contextSetup.scenarioId);
+
   useEffect(() => {
-    if (performance.overallScore === 0) {
-      setPerformance({
-        overallScore: 72,
-        objectionHandling: 58,
-        communicationClarity: 85,
-        strengths: [
-          "Strong opening rapport and empathy-building",
-          "Effective use of case studies to counter skepticism",
-          "Good active listening — acknowledged buyer concerns before responding",
-        ],
-        weaknesses: [
-          "Avoided direct pricing conversation when challenged",
-          "Failed to quantify ROI with specific metrics",
-          "Did not establish next-step commitment before session end",
-        ],
-        aiFeedback: 'Your conversational flow was strong — you built genuine rapport and showed empathy early. However, when the CFO pressed on pricing, you deflected rather than anchoring with a value-first framing. In future sessions, try the "Cost of Inaction" framework: quantify what the client loses each month by not switching, then position your price as an investment against that loss. Your communication clarity was excellent — keep leveraging concrete examples.',
-      });
+    async function evaluate() {
+      if (performance.overallScore !== 0) return; // already evaluated
+      if (!scenarioId || sparringSession.messages.length === 0) return;
+
+      setIsEvaluating(true);
+      try {
+        const result = await api.evaluateSession(scenarioId, sparringSession.messages);
+        setPerformance({
+          overallScore: result.overallScore,
+          objectionHandling: result.objectionHandling,
+          communicationClarity: result.communicationClarity,
+          strengths: result.strengths,
+          weaknesses: result.weaknesses,
+          aiFeedback: result.aiFeedback,
+        });
+
+        // Use the returned nextDifficulty to update local store difficulty
+        useAppStore.setState(state => ({
+          sparringSession: {
+            ...state.sparringSession,
+            // @ts-ignore
+            difficulty: result.nextDifficulty || state.sparringSession.difficulty
+          }
+        }));
+      } catch (err) {
+        console.error("Evaluation failed:", err);
+      } finally {
+        setIsEvaluating(false);
+      }
     }
-  }, [performance.overallScore, setPerformance]);
+
+    evaluate();
+  }, [performance.overallScore, setPerformance, scenarioId, sparringSession.messages]);
+
+  if (isEvaluating || performance.overallScore === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
+        <div className="h-20 w-20 rounded-3xl bg-muted flex items-center justify-center animate-pulse-slow">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold">AI Coach Analyzing Transcript...</h2>
+          <p className="text-muted-foreground text-sm max-w-sm">
+            Evaluating objection handling, groundedness, and persuasion.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
       <div>
@@ -123,8 +160,8 @@ export default function Performance() {
         <AlertTitle className="text-sm font-semibold">Agent Memory Updated</AlertTitle>
         <AlertDescription className="text-sm text-muted-foreground mt-1">
           Next session difficulty will be increased to <Badge variant="secondary" className="font-mono text-[10px] mx-1 rounded-lg">
-            {sparringSession.difficulty === 'beginner' ? 'Intermediate' : 
-             sparringSession.difficulty === 'intermediate' ? 'Advanced' : 'Adversarial'}
+            {sparringSession.difficulty === 'beginner' ? 'Intermediate' :
+              sparringSession.difficulty === 'intermediate' ? 'Advanced' : 'Adversarial'}
           </Badge>.
           The agent will push harder on <span className="font-medium text-foreground">pricing objections</span> and
           <span className="font-medium text-foreground"> ROI quantification</span>.
