@@ -42,19 +42,19 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 220 45% 10%;
-    --sidebar-foreground: 210 15% 65%;
-    --sidebar-primary: 174 100% 45%;
-    --sidebar-primary-foreground: 220 45% 10%;
-    --sidebar-accent: 220 35% 16%;
-    --sidebar-accent-foreground: 210 15% 90%;
-    --sidebar-border: 220 30% 16%;
-    --sidebar-ring: 174 100% 45%;
+    --sidebar-background: 210 20% 97%;
+    --sidebar-foreground: 215 12% 48%;
+    --sidebar-primary: 174 100% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 174 30% 93%;
+    --sidebar-accent-foreground: 215 50% 12%;
+    --sidebar-border: 210 14% 89%;
+    --sidebar-ring: 174 100% 40%;
 
-    --hud-bg: 220 45% 10%;
-    --hud-foreground: 210 15% 80%;
-    --hud-border: 220 30% 18%;
-    --hud-accent: 174 100% 45%;
+    --hud-bg: 210 20% 97%;
+    --hud-foreground: 215 50% 12%;
+    --hud-border: 210 14% 89%;
+    --hud-accent: 174 100% 40%;
 
     --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
