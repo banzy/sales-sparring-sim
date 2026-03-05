@@ -1,4 +1,4 @@
-import { Settings, Crosshair, FileText, Swords, BarChart3 } from "lucide-react";
+import { Settings, Leaf, FileText, Swords, BarChart3 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -29,17 +29,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-4 py-5">
+      <SidebarHeader className="px-4 py-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Crosshair className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+            <Leaf className="h-5 w-5 text-primary" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">
                 Sales Sparring
               </span>
-              <span className="text-[11px] text-sidebar-foreground">Adaptive Agent</span>
+              <span className="text-xs text-muted-foreground">Adaptive Agent</span>
             </div>
           )}
         </div>
@@ -47,7 +47,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50">
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-4 mb-1">
             Workflow
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -58,17 +58,12 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="hover:bg-sidebar-accent/60 transition-colors"
+                      className="rounded-xl hover:bg-sidebar-accent transition-colors px-3 py-2.5"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center">
-                          <span className="mr-1 text-[10px] font-mono text-sidebar-foreground/40">
-                            {String(idx + 1).padStart(2, "0")}
-                          </span>
-                          <item.icon className="h-4 w-4" />
-                        </div>
-                        {!collapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4 text-muted-foreground" />
+                        {!collapsed && <span className="text-sm">{item.title}</span>}
                       </div>
                     </NavLink>
                   </SidebarMenuButton>
@@ -79,9 +74,9 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="px-4 py-3">
+      <SidebarFooter className="px-4 py-4">
         {!collapsed && (
-          <p className="text-[10px] text-sidebar-foreground/40 font-mono">v1.0 · Adaptive Engine</p>
+          <p className="text-[10px] text-muted-foreground/50 font-mono">v1.0 · Adaptive Engine</p>
         )}
       </SidebarFooter>
     </Sidebar>
