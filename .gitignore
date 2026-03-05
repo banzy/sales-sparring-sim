@@ -25,3 +25,10 @@ dist-ssr
 
 backend/.env
 backend/.venv/
+
+backend/app/api
+backend/app/__pycache__
+backend/app/models
+backend/app/modules/__pycache__
+backend/app/storage
+backend/sparring.db
