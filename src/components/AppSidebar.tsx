@@ -50,7 +50,7 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className="rounded-xl hover:bg-sidebar-accent transition-colors px-3 py-2.5"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.35),_0_1px_2px_rgba(15,23,42,0.18)]"
                     >
                       <div className="flex items-center gap-3">
                         <item.icon className="h-4 w-4 text-muted-foreground" />
