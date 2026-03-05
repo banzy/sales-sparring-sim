@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ interface Message {
   content: string;
 }
 
+type InputMode = "text" | "recording" | "processing";
+
 const initialMessages: Message[] = [
   { id: 1, role: "buyer", content: "Thanks for making the time. I'll be honest — we've been burned by vendors before, so I need to see real proof before I bring anything to the board." },
   { id: 2, role: "seller", content: "Absolutely, I appreciate the candor. That's actually one of the reasons I wanted to start with a case study from a company very similar to yours in the manufacturing space." },
@@ -27,18 +29,60 @@ const objectionChecklist = [
   { label: "ROI Skepticism", tested: false },
 ];
 
+function RecordingTimer({ startTime }: { startTime: number }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setElapsed(Date.now() - startTime), 100);
+    return () => clearInterval(interval);
+  }, [startTime]);
+  const secs = Math.floor(elapsed / 1000);
+  const mins = Math.floor(secs / 60);
+  const displaySecs = secs % 60;
+  return (
+    <span className="font-mono text-sm text-foreground tabular-nums">
+      {String(mins).padStart(2, "0")}:{String(displaySecs).padStart(2, "0")}
+    </span>
+  );
+}
+
+function AudioWaveform() {
+  return (
+    <div className="flex items-center gap-[3px] h-8">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div
+          key={i}
+          className="w-[3px] rounded-full bg-primary"
+          style={{
+            animation: `waveform 1.2s ease-in-out ${i * 0.06}s infinite alternate`,
+            height: "30%",
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes waveform {
+          0% { height: 15%; }
+          100% { height: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function SparringArena() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
+  const [inputMode, setInputMode] = useState<InputMode>("text");
+  const [recordingStart, setRecordingStart] = useState(0);
   const navigate = useNavigate();
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const newMsg: Message = { id: messages.length + 1, role: "seller", content: input };
-    setMessages([...messages, newMsg]);
+  const handleSend = (content?: string) => {
+    const text = content || input.trim();
+    if (!text) return;
+    const newMsg: Message = { id: messages.length + 1, role: "seller", content: text };
+    setMessages((prev) => [...prev, newMsg]);
     setInput("");
+    setInputMode("text");
 
-    // Simulate AI response
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
@@ -49,6 +93,22 @@ export default function SparringArena() {
         },
       ]);
     }, 1500);
+  };
+
+  const startRecording = () => {
+    setInputMode("recording");
+    setRecordingStart(Date.now());
+  };
+
+  const cancelRecording = () => {
+    setInputMode("text");
+  };
+
+  const sendRecording = () => {
+    setInputMode("processing");
+    setTimeout(() => {
+      handleSend("I understand your concern about the timeline. Let me walk you through our phased implementation plan that accounts for compliance checkpoints at every stage.");
+    }, 2000);
   };
 
   return (
@@ -94,20 +154,53 @@ export default function SparringArena() {
         </ScrollArea>
 
         <div className="px-6 py-4 border-t border-border bg-card/50">
-          <div className="flex gap-2 max-w-2xl">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Type your response..."
-              className="flex-1"
-            />
-            <Button size="icon" variant="ghost" className="shrink-0">
-              <Mic className="h-4 w-4" />
-            </Button>
-            <Button onClick={handleSend} className="shrink-0">
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="flex gap-2 max-w-2xl items-center">
+            {inputMode === "text" && (
+              <>
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder="Type your response..."
+                  className="flex-1"
+                />
+                <Button onClick={() => handleSend()} disabled={!input.trim()} className="shrink-0">
+                  <Send className="h-4 w-4" />
+                </Button>
+                <button
+                  onClick={startRecording}
+                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-lg"
+                >
+                  <Mic className="h-5 w-5" />
+                </button>
+              </>
+            )}
+
+            {inputMode === "recording" && (
+              <>
+                <div className="flex-1 flex items-center gap-3 bg-muted rounded-lg px-4 py-2">
+                  <div className="h-3 w-3 rounded-full bg-destructive animate-pulse shrink-0" />
+                  <AudioWaveform />
+                  <RecordingTimer startTime={recordingStart} />
+                </div>
+                <Button size="icon" variant="destructive" onClick={cancelRecording} className="shrink-0">
+                  <X className="h-4 w-4" />
+                </Button>
+                <button
+                  onClick={sendRecording}
+                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-lg"
+                >
+                  <Check className="h-5 w-5" />
+                </button>
+              </>
+            )}
+
+            {inputMode === "processing" && (
+              <div className="flex-1 flex items-center justify-center gap-2 py-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm font-medium">Analyzing Pitch...</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
