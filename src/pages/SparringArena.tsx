@@ -258,11 +258,11 @@ export default function SparringArena() {
               Session Stats
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 rounded-xl" style={{ background: 'hsl(220 35% 16%)' }}>
+              <div className="text-center p-3 rounded-xl bg-muted/50">
                 <p className="text-lg font-bold font-mono text-hud-foreground">4:32</p>
                 <p className="text-[10px] text-hud-foreground/50">Duration</p>
               </div>
-              <div className="text-center p-3 rounded-xl" style={{ background: 'hsl(220 35% 16%)' }}>
+              <div className="text-center p-3 rounded-xl bg-muted/50">
                 <p className="text-lg font-bold font-mono text-hud-foreground">6</p>
                 <p className="text-[10px] text-hud-foreground/50">Exchanges</p>
               </div>
