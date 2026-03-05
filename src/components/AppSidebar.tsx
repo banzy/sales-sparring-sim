@@ -1,4 +1,5 @@
-import { Settings, Leaf, FileText, Swords, BarChart3 } from "lucide-react";
+import { Settings, FileText, Swords, BarChart3 } from "lucide-react";
+import ciklumLogo from "@/assets/ciklum-logo.jpg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -29,19 +30,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-4 py-6">
+      <SidebarHeader className="px-4 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-            <Leaf className="h-5 w-5 text-primary" />
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">
-                Sales Sparring
-              </span>
-              <span className="text-xs text-muted-foreground">Adaptive Agent</span>
-            </div>
-          )}
+          <img src={ciklumLogo} alt="Ciklum" className="h-8 object-contain" />
         </div>
       </SidebarHeader>
 
