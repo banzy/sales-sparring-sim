@@ -7,13 +7,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
+import { useAppStore } from "@/store";
 
 export default function ContextSetup() {
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const navigate = useNavigate();
+  
+  const { contextSetup, setContextSetup } = useAppStore();
+  const [clientName, setClientName] = useState(contextSetup.clientName || '');
+  const [industry, setIndustry] = useState(contextSetup.industry || '');
+  const [painPoints, setPainPoints] = useState(contextSetup.painPoints || '');
 
-  const handleProcess = () => {
+  const handleProcess = (mode: 'upload' | 'synthetic') => {
+    setContextSetup({
+      mode,
+      clientName: mode === 'synthetic' ? clientName : undefined,
+      industry: mode === 'synthetic' ? industry : undefined,
+      painPoints: mode === 'synthetic' ? painPoints : undefined,
+    });
+    
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
@@ -84,7 +97,7 @@ export default function ContextSetup() {
               <p className="text-sm font-medium">Drop files here or click to browse</p>
               <p className="text-xs text-muted-foreground mt-1">PDF, TXT, DOCX up to 10MB</p>
             </div>
-            <Button className="w-full rounded-xl" onClick={handleProcess}>
+            <Button className="w-full rounded-xl" onClick={() => handleProcess('upload')}>
               Process Documents
             </Button>
           </CardContent>
@@ -107,11 +120,17 @@ export default function ContextSetup() {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="client-name" className="text-xs font-medium">Target Client Name</Label>
-                <Input id="client-name" placeholder="e.g. Acme Corp" className="rounded-xl" />
+                <Input 
+                  id="client-name" 
+                  placeholder="e.g. Acme Corp" 
+                  className="rounded-xl"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Industry / Sector</Label>
-                <Select>
+                <Select value={industry} onValueChange={setIndustry}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
@@ -127,10 +146,17 @@ export default function ContextSetup() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pain-points" className="text-xs font-medium">Specific Requirements or Pain Points</Label>
-                <Textarea id="pain-points" placeholder="Describe the client's challenges..." rows={3} className="rounded-xl" />
+                <Textarea 
+                  id="pain-points" 
+                  placeholder="Describe the client's challenges..." 
+                  rows={3} 
+                  className="rounded-xl"
+                  value={painPoints}
+                  onChange={(e) => setPainPoints(e.target.value)}
+                />
               </div>
             </div>
-            <Button className="w-full rounded-xl" onClick={handleProcess}>
+            <Button className="w-full rounded-xl" onClick={() => handleProcess('synthetic')}>
               <Sparkles className="h-4 w-4 mr-2" />
               Generate Synthetic World
             </Button>

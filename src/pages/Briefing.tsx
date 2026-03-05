@@ -4,16 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
-
-const objections = [
-  { id: "1", title: "Budget Constraints", detail: "The CFO will push back on pricing, citing recent cost-cutting measures across all departments." },
-  { id: "2", title: "Existing Vendor Lock-In", detail: "They've invested heavily in their current solution over 3 years. Switching costs are a major concern." },
-  { id: "3", title: "Timeline Concerns", detail: "Q4 implementation feels risky. They'll want assurances about go-live dates and rollback plans." },
-  { id: "4", title: "ROI Skepticism", detail: "Past vendors over-promised. They'll demand concrete case studies and guaranteed metrics." },
-];
+import { useAppStore } from "@/store";
 
 export default function Briefing() {
   const navigate = useNavigate();
+  const { briefing } = useAppStore();
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
@@ -40,10 +35,10 @@ export default function Briefing() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              ["Company", "Acme Corp"],
-              ["Size", "500–1000 employees"],
-              ["Budget Cycle", "Q4 Planning"],
-              ["Decision Timeline", "6–8 weeks"],
+              ["Company", briefing.clientProfile.name],
+              ["Size", briefing.clientProfile.size],
+              ["Budget Cycle", briefing.clientProfile.budgetCycle],
+              ["Decision Timeline", briefing.clientProfile.decisionTimeline],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between">
                 <span className="text-muted-foreground">{label}</span>
@@ -52,7 +47,7 @@ export default function Briefing() {
             ))}
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Buyer Persona</span>
-              <Badge variant="secondary" className="font-mono text-xs rounded-lg">VP of Operations</Badge>
+              <Badge variant="secondary" className="font-mono text-xs rounded-lg">{briefing.clientProfile.buyerPersona}</Badge>
             </div>
           </CardContent>
         </Card>
@@ -67,12 +62,7 @@ export default function Briefing() {
             </div>
           </CardHeader>
           <CardContent className="text-sm leading-relaxed text-muted-foreground">
-            <p>
-              "Our platform reduces operational overhead by <span className="text-foreground font-semibold">40%</span> within
-              the first quarter, directly addressing your team's bottleneck in cross-department workflows.
-              Unlike your current solution, we offer real-time analytics
-              and a <span className="text-foreground font-semibold">14-day</span> deployment guarantee."
-            </p>
+            <p>{briefing.valueProposition}</p>
           </CardContent>
         </Card>
 
@@ -86,7 +76,7 @@ export default function Briefing() {
             </div>
           </CardHeader>
           <CardContent className="space-y-2.5 text-sm">
-            {["Board approval required > $50k", "SOC 2 Type II compliance mandatory", "Must integrate with Salesforce", "3-year contract minimum preferred"].map((c, i) => (
+            {briefing.buyingConstraints.map((c, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
                 <span className="text-muted-foreground">{c}</span>
@@ -104,7 +94,7 @@ export default function Briefing() {
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
-            {objections.map((obj) => (
+            {briefing.objections.map((obj) => (
               <AccordionItem key={obj.id} value={obj.id}>
                 <AccordionTrigger className="text-sm font-medium hover:no-underline">
                   <div className="flex items-center gap-2">

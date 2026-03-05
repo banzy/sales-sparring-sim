@@ -7,27 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
-
-interface Message {
-  id: number;
-  role: "buyer" | "seller";
-  content: string;
-}
+import { useAppStore, type Message } from "@/store";
 
 type InputMode = "text" | "recording" | "processing";
-
-const initialMessages: Message[] = [
-  { id: 1, role: "buyer", content: "Thanks for making the time. I'll be honest — we've been burned by vendors before, so I need to see real proof before I bring anything to the board." },
-  { id: 2, role: "seller", content: "Absolutely, I appreciate the candor. That's actually one of the reasons I wanted to start with a case study from a company very similar to yours in the manufacturing space." },
-  { id: 3, role: "buyer", content: "Fine, but let's cut to the chase — what's this going to cost us? We're in the middle of a cost-reduction initiative." },
-];
-
-const objectionChecklist = [
-  { label: "Budget Constraints", tested: true },
-  { label: "Vendor Lock-In", tested: false },
-  { label: "Timeline Risk", tested: false },
-  { label: "ROI Skepticism", tested: false },
-];
 
 function RecordingTimer({ startTime }: { startTime: number }) {
   const [elapsed, setElapsed] = useState(0);
@@ -69,29 +51,41 @@ function AudioWaveform() {
 }
 
 export default function SparringArena() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const navigate = useNavigate();
+  const { sparringSession, addMessage, startSparringSession, endSparringSession, updateSessionStats } = useAppStore();
+  
   const [input, setInput] = useState("");
   const [inputMode, setInputMode] = useState<InputMode>("text");
   const [recordingStart, setRecordingStart] = useState(0);
-  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (!sparringSession.isActive) {
+      startSparringSession();
+    }
+  }, [sparringSession.isActive, startSparringSession]);
 
   const handleSend = (content?: string) => {
     const text = content || input.trim();
     if (!text) return;
-    const newMsg: Message = { id: messages.length + 1, role: "seller", content: text };
-    setMessages((prev) => [...prev, newMsg]);
+    
+    const newMsg: Message = { 
+      id: sparringSession.messages.length + 1, 
+      role: "seller", 
+      content: text,
+      timestamp: Date.now()
+    };
+    addMessage(newMsg);
     setInput("");
     setInputMode("text");
 
     setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          role: "buyer",
-          content: "Interesting point. But how do you justify that timeline given our compliance requirements? We can't afford a delay.",
-        },
-      ]);
+      const buyerMsg: Message = {
+        id: sparringSession.messages.length + 2,
+        role: "buyer",
+        content: "Interesting point. But how do you justify that timeline given our compliance requirements? We can't afford a delay.",
+        timestamp: Date.now()
+      };
+      addMessage(buyerMsg);
     }, 1500);
   };
 
@@ -125,7 +119,7 @@ export default function SparringArena() {
 
         <ScrollArea className="flex-1 px-6 py-4 bg-muted/30">
           <div className="space-y-4 max-w-2xl">
-            {messages.map((msg) => (
+            {sparringSession.messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex gap-3 ${msg.role === "seller" ? "flex-row-reverse" : ""}`}
@@ -212,9 +206,9 @@ export default function SparringArena() {
             <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-1">
               Current Persona
             </p>
-            <p className="text-sm font-semibold text-hud-foreground">Skeptical CFO</p>
+            <p className="text-sm font-semibold text-hud-foreground">{sparringSession.currentPersona.name}</p>
             <p className="text-xs text-hud-foreground/60 mt-0.5">
-              Risk-averse, data-driven, 15+ years in finance
+              {sparringSession.currentPersona.description}
             </p>
           </div>
 
@@ -225,7 +219,7 @@ export default function SparringArena() {
               Difficulty Level
             </p>
             <Badge className="bg-warning/20 text-warning border border-warning font-mono text-xs rounded-full px-3 py-0.5">
-              Intermediate
+              {sparringSession.difficulty.charAt(0).toUpperCase() + sparringSession.difficulty.slice(1)}
             </Badge>
           </div>
 
@@ -236,15 +230,15 @@ export default function SparringArena() {
               Active Objections
             </p>
             <div className="space-y-2.5">
-              {objectionChecklist.map((obj, i) => (
-                <div key={i} className="flex items-center gap-2.5 text-xs">
+              {sparringSession.objectionChecklist.map((obj) => (
+                <div key={obj.id} className="flex items-center gap-2.5 text-xs">
                   {obj.tested ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
                   ) : (
                     <div className="h-3.5 w-3.5 rounded-full border border-hud-foreground/30 shrink-0" />
                   )}
                   <span className={obj.tested ? "text-hud-foreground/40 line-through" : "text-hud-foreground"}>
-                    {obj.label}
+                    {obj.title}
                   </span>
                 </div>
               ))}
@@ -259,11 +253,13 @@ export default function SparringArena() {
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-3 rounded-xl bg-muted/50">
-                <p className="text-lg font-bold font-mono text-hud-foreground">4:32</p>
+                <p className="text-lg font-bold font-mono text-hud-foreground">
+                  {Math.floor(sparringSession.sessionStats.duration / 60)}:{String(sparringSession.sessionStats.duration % 60).padStart(2, '0')}
+                </p>
                 <p className="text-[10px] text-hud-foreground/50">Duration</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-muted/50">
-                <p className="text-lg font-bold font-mono text-hud-foreground">6</p>
+                <p className="text-lg font-bold font-mono text-hud-foreground">{sparringSession.sessionStats.exchanges}</p>
                 <p className="text-[10px] text-hud-foreground/50">Exchanges</p>
               </div>
             </div>
@@ -274,7 +270,10 @@ export default function SparringArena() {
           <Button
             variant="destructive"
             className="w-full rounded-xl"
-            onClick={() => navigate("/performance")}
+            onClick={() => {
+              endSparringSession();
+              navigate("/performance");
+            }}
           >
             <AlertTriangle className="h-4 w-4 mr-2" />
             End Sparring Session

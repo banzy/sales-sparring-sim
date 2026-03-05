@@ -59,6 +59,36 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Zustand (State Management)
+- React Query (Data Fetching)
+
+## State Management
+
+This project uses **Zustand** for centralized state management. Key features:
+
+- **Persistent State**: User configuration survives page refreshes
+- **Type-Safe**: Full TypeScript support
+- **DevTools**: Redux DevTools integration for debugging
+- **Performance**: Optimized re-renders with selective subscriptions
+
+### Store Structure
+
+```typescript
+import { useAppStore } from '@/store';
+
+// Access state
+const { briefing, sparringSession, performance } = useAppStore();
+
+// Use actions
+const { addMessage, startSparringSession } = useAppStore();
+```
+
+### Documentation
+
+- `ZUSTAND_MIGRATION.md` - Detailed migration guide
+- `STATE_FLOW.md` - Architecture and data flow
+- `QUICK_REFERENCE.md` - Quick reference for common patterns
+- `BEFORE_AFTER_COMPARISON.md` - Comparison with previous approach
 
 ## How can I deploy this project?
 
