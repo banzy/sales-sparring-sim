@@ -224,7 +224,7 @@ export default function SparringArena() {
             <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-2">
               Difficulty Level
             </p>
-            <Badge className="bg-warning text-warning-foreground font-mono text-xs rounded-lg">
+            <Badge className="bg-warning/20 text-warning border border-warning font-mono text-xs rounded-full px-3 py-0.5">
               Intermediate
             </Badge>
           </div>
