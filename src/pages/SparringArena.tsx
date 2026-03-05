@@ -134,7 +134,7 @@ export default function SparringArena() {
                   className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
                     msg.role === "buyer"
                       ? "bg-muted text-muted-foreground"
-                      : "bg-primary/15 text-primary"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {msg.role === "buyer" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}

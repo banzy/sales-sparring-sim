@@ -27,7 +27,7 @@ export default function Performance() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-5">
-        <Card className="glass-card glow-primary">
+        <Card className="glass-card">
           <CardContent className="pt-6 text-center">
             <div className="text-5xl font-bold font-mono text-primary">72</div>
             <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">Overall Score</p>
@@ -56,7 +56,7 @@ export default function Performance() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-success/10 flex items-center justify-center">
+              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
                 <TrendingUp className="h-3.5 w-3.5 text-success" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Strengths</CardTitle>
@@ -75,7 +75,7 @@ export default function Performance() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
                 <TrendingDown className="h-3.5 w-3.5 text-destructive" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Weaknesses</CardTitle>
@@ -95,8 +95,8 @@ export default function Performance() {
       <Card className="glass-card">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
-              <MessageSquare className="h-3.5 w-3.5 text-primary" />
+            <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+              <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
             <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI Coach Feedback</CardTitle>
           </div>
@@ -112,7 +112,7 @@ export default function Performance() {
         </CardContent>
       </Card>
 
-      <Alert className="border-primary/20 bg-accent rounded-2xl">
+      <Alert className="border-border bg-muted/50 rounded-2xl">
         <AlertCircle className="h-4 w-4 text-primary" />
         <AlertTitle className="text-sm font-semibold">Agent Memory Updated</AlertTitle>
         <AlertDescription className="text-sm text-muted-foreground mt-1">

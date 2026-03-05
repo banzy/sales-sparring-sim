@@ -6,55 +6,55 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 40% 16%;
+    --background: 0 0% 99%;
+    --foreground: 220 20% 18%;
 
-    --card: 210 20% 99.5%;
-    --card-foreground: 215 40% 16%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 18%;
 
-    --popover: 210 20% 99.5%;
-    --popover-foreground: 215 40% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 18%;
 
-    --primary: 190 55% 46%;
+    --primary: 192 45% 46%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 16% 94%;
-    --secondary-foreground: 215 35% 20%;
+    --secondary: 220 10% 95%;
+    --secondary-foreground: 220 15% 25%;
 
-    --muted: 210 12% 94%;
-    --muted-foreground: 215 10% 50%;
+    --muted: 220 8% 95%;
+    --muted-foreground: 220 8% 52%;
 
-    --accent: 190 25% 93%;
-    --accent-foreground: 215 40% 18%;
+    --accent: 220 8% 95%;
+    --accent-foreground: 220 20% 18%;
 
-    --destructive: 0 65% 55%;
+    --destructive: 0 55% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 190 50% 40%;
+    --success: 160 40% 42%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 40 90% 52%;
-    --warning-foreground: 215 40% 16%;
+    --warning: 40 80% 52%;
+    --warning-foreground: 220 20% 18%;
 
-    --border: 210 12% 91%;
-    --input: 210 12% 91%;
-    --ring: 190 55% 46%;
+    --border: 220 8% 92%;
+    --input: 220 8% 92%;
+    --ring: 192 45% 46%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 210 16% 94%;
-    --sidebar-foreground: 215 12% 45%;
-    --sidebar-primary: 190 55% 46%;
+    --sidebar-background: 220 8% 95.5%;
+    --sidebar-foreground: 220 8% 48%;
+    --sidebar-primary: 192 45% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 190 18% 89%;
-    --sidebar-accent-foreground: 215 40% 16%;
-    --sidebar-border: 210 12% 91%;
-    --sidebar-ring: 190 55% 46%;
+    --sidebar-accent: 220 8% 92%;
+    --sidebar-accent-foreground: 220 20% 18%;
+    --sidebar-border: 220 8% 92%;
+    --sidebar-ring: 192 45% 46%;
 
-    --hud-bg: 210 20% 98%;
-    --hud-foreground: 215 40% 16%;
-    --hud-border: 210 12% 91%;
-    --hud-accent: 190 55% 46%;
+    --hud-bg: 0 0% 99%;
+    --hud-foreground: 220 20% 18%;
+    --hud-border: 220 8% 92%;
+    --hud-accent: 192 45% 46%;
 
     --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
