@@ -115,15 +115,15 @@ export default function SparringArena() {
     <div className="flex h-[calc(100vh-3.5rem)]">
       {/* Chat Area - 70% */}
       <div className="flex-[7] flex flex-col min-w-0">
-        <div className="px-6 py-4 border-b border-border bg-card/50">
+        <div className="px-6 py-3.5 border-b border-border bg-background">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
             <span className="text-sm font-medium">Live Sparring Session</span>
-            <Badge variant="secondary" className="text-[10px] font-mono ml-2">REC</Badge>
+            <Badge variant="secondary" className="text-[10px] font-mono ml-2 rounded-lg">REC</Badge>
           </div>
         </div>
 
-        <ScrollArea className="flex-1 px-6 py-4">
+        <ScrollArea className="flex-1 px-6 py-4 bg-muted/30">
           <div className="space-y-4 max-w-2xl">
             {messages.map((msg) => (
               <div
@@ -131,9 +131,9 @@ export default function SparringArena() {
                 className={`flex gap-3 ${msg.role === "seller" ? "flex-row-reverse" : ""}`}
               >
                 <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
+                  className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
                     msg.role === "buyer"
-                      ? "bg-destructive/10 text-destructive"
+                      ? "bg-muted text-muted-foreground"
                       : "bg-primary/10 text-primary"
                   }`}
                 >
@@ -142,8 +142,8 @@ export default function SparringArena() {
                 <div
                   className={`rounded-2xl px-4 py-3 text-sm max-w-[80%] ${
                     msg.role === "buyer"
-                      ? "bg-muted text-foreground rounded-tl-sm"
-                      : "bg-primary text-primary-foreground rounded-tr-sm"
+                      ? "bg-card border border-border text-foreground rounded-tl-md"
+                      : "bg-primary text-primary-foreground rounded-tr-md"
                   }`}
                 >
                   {msg.content}
@@ -153,7 +153,7 @@ export default function SparringArena() {
           </div>
         </ScrollArea>
 
-        <div className="px-6 py-4 border-t border-border bg-card/50">
+        <div className="px-6 py-4 border-t border-border bg-background">
           <div className="flex gap-2 max-w-2xl items-center">
             {inputMode === "text" && (
               <>
@@ -162,14 +162,14 @@ export default function SparringArena() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Type your response..."
-                  className="flex-1"
+                  className="flex-1 rounded-xl"
                 />
-                <Button onClick={() => handleSend()} disabled={!input.trim()} className="shrink-0">
+                <Button onClick={() => handleSend()} disabled={!input.trim()} className="shrink-0 rounded-xl">
                   <Send className="h-4 w-4" />
                 </Button>
                 <button
                   onClick={startRecording}
-                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-lg"
+                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
                 >
                   <Mic className="h-5 w-5" />
                 </button>
@@ -178,17 +178,17 @@ export default function SparringArena() {
 
             {inputMode === "recording" && (
               <>
-                <div className="flex-1 flex items-center gap-3 bg-muted rounded-lg px-4 py-2">
+                <div className="flex-1 flex items-center gap-3 bg-muted rounded-xl px-4 py-2">
                   <div className="h-3 w-3 rounded-full bg-destructive animate-pulse shrink-0" />
                   <AudioWaveform />
                   <RecordingTimer startTime={recordingStart} />
                 </div>
-                <Button size="icon" variant="destructive" onClick={cancelRecording} className="shrink-0">
+                <Button size="icon" variant="destructive" onClick={cancelRecording} className="shrink-0 rounded-xl">
                   <X className="h-4 w-4" />
                 </Button>
                 <button
                   onClick={sendRecording}
-                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-lg"
+                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
                 >
                   <Check className="h-5 w-5" />
                 </button>
@@ -206,44 +206,44 @@ export default function SparringArena() {
       </div>
 
       {/* HUD Panel - 30% */}
-      <div className="flex-[3] hud-panel flex flex-col border-l overflow-auto">
+      <div className="flex-[3] bg-card flex flex-col border-l border-border overflow-auto">
         <div className="p-5 space-y-5">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-1">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-1">
               Current Persona
             </p>
-            <p className="text-sm font-semibold text-hud-foreground">Skeptical CFO</p>
-            <p className="text-xs text-hud-foreground/60 mt-0.5">
+            <p className="text-sm font-semibold">Skeptical CFO</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Risk-averse, data-driven, 15+ years in finance
             </p>
           </div>
 
-          <Separator className="bg-hud-border" />
+          <Separator />
 
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-2">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-2">
               Difficulty Level
             </p>
-            <Badge className="bg-warning text-warning-foreground font-mono text-xs">
+            <Badge className="bg-warning text-warning-foreground font-mono text-xs rounded-lg">
               Intermediate
             </Badge>
           </div>
 
-          <Separator className="bg-hud-border" />
+          <Separator />
 
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-3">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-3">
               Active Objections
             </p>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {objectionChecklist.map((obj, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs">
+                <div key={i} className="flex items-center gap-2.5 text-xs">
                   {obj.tested ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
                   ) : (
-                    <div className="h-3.5 w-3.5 rounded-full border border-hud-foreground/30 shrink-0" />
+                    <div className="h-3.5 w-3.5 rounded-full border border-border shrink-0" />
                   )}
-                  <span className={obj.tested ? "text-hud-foreground/40 line-through" : "text-hud-foreground"}>
+                  <span className={obj.tested ? "text-muted-foreground line-through" : "text-foreground"}>
                     {obj.label}
                   </span>
                 </div>
@@ -251,20 +251,20 @@ export default function SparringArena() {
             </div>
           </div>
 
-          <Separator className="bg-hud-border" />
+          <Separator />
 
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-2">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-2">
               Session Stats
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="text-center">
-                <p className="text-lg font-bold font-mono text-hud-foreground">4:32</p>
-                <p className="text-[10px] text-hud-foreground/50">Duration</p>
+              <div className="text-center p-3 bg-muted/50 rounded-xl">
+                <p className="text-lg font-bold font-mono">4:32</p>
+                <p className="text-[10px] text-muted-foreground">Duration</p>
               </div>
-              <div className="text-center">
-                <p className="text-lg font-bold font-mono text-hud-foreground">6</p>
-                <p className="text-[10px] text-hud-foreground/50">Exchanges</p>
+              <div className="text-center p-3 bg-muted/50 rounded-xl">
+                <p className="text-lg font-bold font-mono">6</p>
+                <p className="text-[10px] text-muted-foreground">Exchanges</p>
               </div>
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function SparringArena() {
         <div className="mt-auto p-5">
           <Button
             variant="destructive"
-            className="w-full"
+            className="w-full rounded-xl"
             onClick={() => navigate("/performance")}
           >
             <AlertTriangle className="h-4 w-4 mr-2" />
