@@ -39,7 +39,7 @@ function RecordingTimer({ startTime }: { startTime: number }) {
   const mins = Math.floor(secs / 60);
   const displaySecs = secs % 60;
   return (
-    <span className="font-mono text-sm text-foreground tabular-nums">
+    <span className="font-mono text-sm text-hud-foreground tabular-nums">
       {String(mins).padStart(2, "0")}:{String(displaySecs).padStart(2, "0")}
     </span>
   );
@@ -51,7 +51,7 @@ function AudioWaveform() {
       {Array.from({ length: 20 }).map((_, i) => (
         <div
           key={i}
-          className="w-[3px] rounded-full bg-primary"
+          className="w-[3px] rounded-full bg-hud-accent"
           style={{
             animation: `waveform 1.2s ease-in-out ${i * 0.06}s infinite alternate`,
             height: "30%",
@@ -134,7 +134,7 @@ export default function SparringArena() {
                   className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
                     msg.role === "buyer"
                       ? "bg-muted text-muted-foreground"
-                      : "bg-primary/10 text-primary"
+                      : "bg-primary/15 text-primary"
                   }`}
                 >
                   {msg.role === "buyer" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
@@ -206,22 +206,22 @@ export default function SparringArena() {
       </div>
 
       {/* HUD Panel - 30% */}
-      <div className="flex-[3] bg-card flex flex-col border-l border-border overflow-auto">
+      <div className="flex-[3] hud-panel flex flex-col border-l overflow-auto">
         <div className="p-5 space-y-5">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-1">
+            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-1">
               Current Persona
             </p>
-            <p className="text-sm font-semibold">Skeptical CFO</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-sm font-semibold text-hud-foreground">Skeptical CFO</p>
+            <p className="text-xs text-hud-foreground/60 mt-0.5">
               Risk-averse, data-driven, 15+ years in finance
             </p>
           </div>
 
-          <Separator />
+          <Separator className="bg-hud-border" />
 
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-2">
+            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-2">
               Difficulty Level
             </p>
             <Badge className="bg-warning text-warning-foreground font-mono text-xs rounded-lg">
@@ -229,10 +229,10 @@ export default function SparringArena() {
             </Badge>
           </div>
 
-          <Separator />
+          <Separator className="bg-hud-border" />
 
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-3">
+            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-3">
               Active Objections
             </p>
             <div className="space-y-2.5">
@@ -241,9 +241,9 @@ export default function SparringArena() {
                   {obj.tested ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
                   ) : (
-                    <div className="h-3.5 w-3.5 rounded-full border border-border shrink-0" />
+                    <div className="h-3.5 w-3.5 rounded-full border border-hud-foreground/30 shrink-0" />
                   )}
-                  <span className={obj.tested ? "text-muted-foreground line-through" : "text-foreground"}>
+                  <span className={obj.tested ? "text-hud-foreground/40 line-through" : "text-hud-foreground"}>
                     {obj.label}
                   </span>
                 </div>
@@ -251,20 +251,20 @@ export default function SparringArena() {
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-hud-border" />
 
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mb-2">
+            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-2">
               Session Stats
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 bg-muted/50 rounded-xl">
-                <p className="text-lg font-bold font-mono">4:32</p>
-                <p className="text-[10px] text-muted-foreground">Duration</p>
+              <div className="text-center p-3 rounded-xl" style={{ background: 'hsl(220 35% 16%)' }}>
+                <p className="text-lg font-bold font-mono text-hud-foreground">4:32</p>
+                <p className="text-[10px] text-hud-foreground/50">Duration</p>
               </div>
-              <div className="text-center p-3 bg-muted/50 rounded-xl">
-                <p className="text-lg font-bold font-mono">6</p>
-                <p className="text-[10px] text-muted-foreground">Exchanges</p>
+              <div className="text-center p-3 rounded-xl" style={{ background: 'hsl(220 35% 16%)' }}>
+                <p className="text-lg font-bold font-mono text-hud-foreground">6</p>
+                <p className="text-[10px] text-hud-foreground/50">Exchanges</p>
               </div>
             </div>
           </div>
