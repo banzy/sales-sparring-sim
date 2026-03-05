@@ -6,55 +6,55 @@
 
 @layer base {
   :root {
-    --background: 40 20% 97%;
-    --foreground: 30 10% 12%;
+    --background: 210 20% 97%;
+    --foreground: 215 50% 12%;
 
-    --card: 40 25% 99%;
-    --card-foreground: 30 10% 12%;
+    --card: 210 25% 99%;
+    --card-foreground: 215 50% 12%;
 
-    --popover: 40 25% 99%;
-    --popover-foreground: 30 10% 12%;
+    --popover: 210 25% 99%;
+    --popover-foreground: 215 50% 12%;
 
-    --primary: 162 63% 41%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 174 100% 40%;
+    --primary-foreground: 215 50% 10%;
 
-    --secondary: 40 18% 93%;
-    --secondary-foreground: 30 10% 20%;
+    --secondary: 210 18% 93%;
+    --secondary-foreground: 215 40% 18%;
 
-    --muted: 40 14% 93%;
-    --muted-foreground: 30 6% 50%;
+    --muted: 210 14% 93%;
+    --muted-foreground: 215 12% 48%;
 
-    --accent: 175 40% 92%;
-    --accent-foreground: 170 40% 20%;
+    --accent: 174 40% 92%;
+    --accent-foreground: 215 50% 15%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 60% 42%;
+    --success: 174 80% 38%;
     --success-foreground: 0 0% 100%;
 
     --warning: 40 90% 52%;
-    --warning-foreground: 30 10% 12%;
+    --warning-foreground: 215 50% 12%;
 
-    --border: 40 12% 88%;
-    --input: 40 12% 88%;
-    --ring: 162 63% 41%;
+    --border: 210 14% 89%;
+    --input: 210 14% 89%;
+    --ring: 174 100% 40%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 40 15% 96%;
-    --sidebar-foreground: 30 8% 40%;
-    --sidebar-primary: 162 63% 41%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 162 30% 92%;
-    --sidebar-accent-foreground: 30 10% 12%;
-    --sidebar-border: 40 12% 90%;
-    --sidebar-ring: 162 63% 41%;
+    --sidebar-background: 220 45% 10%;
+    --sidebar-foreground: 210 15% 65%;
+    --sidebar-primary: 174 100% 45%;
+    --sidebar-primary-foreground: 220 45% 10%;
+    --sidebar-accent: 220 35% 16%;
+    --sidebar-accent-foreground: 210 15% 90%;
+    --sidebar-border: 220 30% 16%;
+    --sidebar-ring: 174 100% 45%;
 
-    --hud-bg: 30 8% 98%;
-    --hud-foreground: 30 10% 25%;
-    --hud-border: 40 12% 90%;
-    --hud-accent: 162 63% 41%;
+    --hud-bg: 220 45% 10%;
+    --hud-foreground: 210 15% 80%;
+    --hud-border: 220 30% 18%;
+    --hud-accent: 174 100% 45%;
 
     --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
@@ -92,7 +92,7 @@
   }
 
   .glow-primary {
-    box-shadow: 0 4px 20px hsl(var(--primary) / 0.15);
+    box-shadow: 0 4px 20px hsl(var(--primary) / 0.2);
   }
 
   .animate-pulse-slow {
