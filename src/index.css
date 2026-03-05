@@ -1,11 +1,18 @@
+@import "@fontsource/aileron/latin-300.css";
+@import "@fontsource/aileron/latin-400.css";
+@import "@fontsource/aileron/latin-600.css";
+@import "@fontsource/aileron/latin-700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
+    --font-size-base: 18px;
     --background: 0 0% 99%;
     --foreground: 220 20% 18%;
 
@@ -56,12 +63,16 @@
     --hud-border: 220 8% 92%;
     --hud-accent: 195 80% 42%;
 
-    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Aileron', system-ui, -apple-system, sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
   }
 }
 
 @layer base {
+  html {
+    font-size: var(--font-size-base);
+  }
+
   * {
     @apply border-border;
   }
@@ -71,7 +82,12 @@
     font-family: var(--font-sans);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
   }
 }

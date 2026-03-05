@@ -1,5 +1,5 @@
 import { Settings, FileText, Swords, BarChart3 } from "lucide-react";
-import ciklumLogo from "@/assets/ciklum-logo.jpg";
+import ciklumLogo from "@/assets/ciklum-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -32,7 +32,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="px-4 py-5 bg-white">
         <div className="flex items-center gap-3">
-          <img src={ciklumLogo} alt="Ciklum" className="h-8 object-contain" />
+          <img src={ciklumLogo} alt="Ciklum" className="h-10 object-contain" />
         </div>
       </SidebarHeader>
 

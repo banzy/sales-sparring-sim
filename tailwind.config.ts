@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Aileron', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['IBM Plex Mono', 'monospace'],
       },
       colors: {
