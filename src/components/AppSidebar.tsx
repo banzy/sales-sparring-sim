@@ -30,7 +30,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-4 py-5">
+      <SidebarHeader className="px-4 py-5 bg-white">
         <div className="flex items-center gap-3">
           <img src={ciklumLogo} alt="Ciklum" className="h-8 object-contain" />
         </div>

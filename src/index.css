@@ -15,7 +15,7 @@
     --popover: 210 25% 99%;
     --popover-foreground: 215 50% 12%;
 
-    --primary: 174 100% 40%;
+    --primary: 176 60% 42%;
     --primary-foreground: 215 50% 10%;
 
     --secondary: 210 18% 93%;
@@ -24,13 +24,13 @@
     --muted: 210 14% 93%;
     --muted-foreground: 215 12% 48%;
 
-    --accent: 174 40% 92%;
+    --accent: 176 30% 92%;
     --accent-foreground: 215 50% 15%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 174 80% 38%;
+    --success: 176 60% 38%;
     --success-foreground: 0 0% 100%;
 
     --warning: 40 90% 52%;
@@ -38,23 +38,23 @@
 
     --border: 210 14% 89%;
     --input: 210 14% 89%;
-    --ring: 174 100% 40%;
+    --ring: 176 60% 42%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 210 18% 93%;
     --sidebar-foreground: 215 15% 42%;
-    --sidebar-primary: 174 100% 40%;
+    --sidebar-primary: 176 60% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 174 25% 88%;
+    --sidebar-accent: 176 20% 88%;
     --sidebar-accent-foreground: 215 50% 12%;
     --sidebar-border: 210 14% 89%;
-    --sidebar-ring: 174 100% 40%;
+    --sidebar-ring: 176 60% 42%;
 
     --hud-bg: 210 20% 97%;
     --hud-foreground: 215 50% 12%;
     --hud-border: 210 14% 89%;
-    --hud-accent: 174 100% 40%;
+    --hud-accent: 176 60% 42%;
 
     --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
