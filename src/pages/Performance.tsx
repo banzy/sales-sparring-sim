@@ -12,15 +12,18 @@ import { Loader2 } from "lucide-react";
 export default function Performance() {
   const { performance, sparringSession, setPerformance } = useAppStore();
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [hasError, setHasError] = useState(false);
   // @ts-ignore
   const scenarioId = useAppStore(state => state.contextSetup.scenarioId);
 
+  const shouldEvaluate = performance.overallScore === 0 && !!scenarioId && sparringSession.messages.length > 0;
+
   useEffect(() => {
     async function evaluate() {
-      if (performance.overallScore !== 0) return; // already evaluated
-      if (!scenarioId || sparringSession.messages.length === 0) return;
+      if (!shouldEvaluate) return;
 
       setIsEvaluating(true);
+      setHasError(false);
       try {
         const result = await api.evaluateSession(scenarioId, sparringSession.messages);
         setPerformance({
@@ -42,15 +45,16 @@ export default function Performance() {
         }));
       } catch (err) {
         console.error("Evaluation failed:", err);
+        setHasError(true);
       } finally {
         setIsEvaluating(false);
       }
     }
 
     evaluate();
-  }, [performance.overallScore, setPerformance, scenarioId, sparringSession.messages]);
+  }, [performance.overallScore, setPerformance, scenarioId, sparringSession.messages, shouldEvaluate]);
 
-  if (isEvaluating || performance.overallScore === 0) {
+  if (isEvaluating || shouldEvaluate) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
         <div className="h-20 w-20 rounded-3xl bg-muted flex items-center justify-center animate-pulse-slow">
@@ -60,6 +64,32 @@ export default function Performance() {
           <h2 className="text-xl font-semibold">AI Coach Analyzing Transcript...</h2>
           <p className="text-muted-foreground text-sm max-w-sm">
             Evaluating objection handling, groundedness, and persuasion.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold text-destructive">Evaluation Failed</h2>
+          <p className="text-muted-foreground text-sm max-w-sm">
+            There was an error while analyzing your transcript. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (performance.overallScore === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold">No Performance Data</h2>
+          <p className="text-muted-foreground text-sm max-w-sm">
+            Complete a session in the Sparring Arena to see your performance and history.
           </p>
         </div>
       </div>
