@@ -31,4 +31,3 @@ backend/app/__pycache__
 backend/app/models
 backend/app/modules/__pycache__
 backend/app/storage
-backend/sparring.db
