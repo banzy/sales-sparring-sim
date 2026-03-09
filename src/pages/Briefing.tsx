@@ -45,9 +45,11 @@ export default function Briefing() {
                 <span className="font-medium">{value}</span>
               </div>
             ))}
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Buyer Persona</span>
-              <Badge variant="secondary" className="font-mono text-xs rounded-lg">{briefing.clientProfile.buyerPersona}</Badge>
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-muted-foreground w-full">Buyer Persona</span>
+              <Badge variant="secondary" className="font-mono text-xs rounded-lg whitespace-normal text-left h-auto py-1.5 leading-snug">
+                {briefing.clientProfile.buyerPersona}
+              </Badge>
             </div>
           </CardContent>
         </Card>

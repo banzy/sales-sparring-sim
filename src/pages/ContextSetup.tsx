@@ -209,7 +209,7 @@ export default function ContextSetup() {
         </Card>
 
         {/* Option C: Load Demo */}
-        <Card className="glass-card hover:shadow-md transition-all border-primary/50 relative overflow-hidden">
+        <Card className="glass-card hover:shadow-md transition-all border-primary/50 relative overflow-hidden bg-[rgba(214,247,255,1)]">
           <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider z-10">
             Recommended
           </div>

@@ -43,8 +43,12 @@ def load_demo_scenario():
             "decision_timeline": "3 months",
             "buyer_persona": "CIO or VP of Customer Experience, focused on operational efficiency and passenger satisfaction"
         },
-        "value_proposition": "Ciklum provides a full-cycle passenger activity tracking system driven by AI. It manages interactions from initial ticket purchase to cancellations, claims, and missing luggage. Users can make requests via text, document, or bot calls with clear communication at every step. Post-cycle, AI agents generate metrics and survey results.",
-        "buying_constraints": "Integrating with legacy flight booking systems, ensuring compliance with aviation data regulations, and proving ROI against existing customer support costs.",
+        "value_proposition": "Ciklum provides a full-cycle passenger activity tracking system driven by AI. It manages interactions from initial ticket purchase to cancellations, claims, and missing luggage. Users can make requests via text, document, or bot calls with clear communication at every step. Post-cycle, AI agents generate metrics and survey results. This radically reduces agent handling time and improves CSAT through predictive analytics.",
+        "buying_constraints": [
+            "Integrating with legacy flight booking systems",
+            "Ensuring compliance with aviation data regulations",
+            "Proving ROI against existing customer support costs"
+        ],
         "objections": [
             {
                 "id": "1",
@@ -62,6 +66,18 @@ def load_demo_scenario():
                 "id": "3",
                 "title": "Cost vs Loyalty",
                 "detail": "We already have a massive call center. Will replacing parts of it with AI actually improve passenger loyalty, or just cut costs and frustrate users?",
+                "tested": False
+            },
+            {
+                "id": "4",
+                "title": "Training Reality",
+                "detail": "We don’t have a team of prompt engineers or AI scientists. How much effort is required from our internal team to train and maintain these models?",
+                "tested": False
+            },
+            {
+                "id": "5",
+                "title": "Data Privacy",
+                "detail": "Our passengers trust us with sensitive PII like passport details and payment info. How does your AI ensure this data isn't exposed or used to train public models?",
                 "tested": False
             }
         ]
