@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useAppStore, type Message } from "@/store";
-import { api } from "@/lib/api";
+import { api, type SessionSummary } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 type InputMode = "text" | "recording" | "processing";
@@ -60,6 +60,7 @@ export default function SparringArena() {
   const [inputMode, setInputMode] = useState<InputMode>("text");
   const [recordingStart, setRecordingStart] = useState(0);
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
+  const [pastSessions, setPastSessions] = useState<SessionSummary[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -102,6 +103,12 @@ export default function SparringArena() {
     if (!sparringSession.isActive) {
       startSparringSession();
     }
+
+    // Fetch past sessions history
+    api.listSessions().then(list => {
+      // Exclude current session and reverse to show oldest first, or just keep top 2
+      setPastSessions(list.filter(s => s.overall_score !== null));
+    }).catch(console.error);
   }, [sparringSession.isActive, startSparringSession]);
 
   const { toast } = useToast();
@@ -445,6 +452,35 @@ export default function SparringArena() {
               </div>
             </div>
           </div>
+
+          {pastSessions.length > 0 && (
+            <>
+              <Separator className="bg-hud-border" />
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-3 flex items-center gap-1.5">
+                  <History className="h-3 w-3" />
+                  Past Sessions
+                </p>
+                <div className="space-y-2">
+                  {[...pastSessions].reverse().map((s, idx) => (
+                    <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/40 text-xs">
+                      <span className="text-hud-foreground/70 font-medium">Session {idx + 1}</span>
+                      <Badge variant={s.overall_score && s.overall_score >= 75 ? "default" : s.overall_score && s.overall_score >= 50 ? "secondary" : "destructive"} className="font-mono text-[10px] rounded px-1.5 py-0">
+                        {s.overall_score}
+                      </Badge>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between p-2 rounded-lg border border-primary/30 bg-primary/10 text-xs relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+                    <span className="text-hud-foreground font-semibold ml-1">Current Session</span>
+                    <Badge variant="outline" className="font-mono text-[10px] rounded px-1.5 py-0 border-primary/50 text-primary">
+                      TBD
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {!isHistoricalView && (
