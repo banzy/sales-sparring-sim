@@ -26,7 +26,8 @@ export interface ClientProfile {
 }
 
 export interface ContextSetupData {
-  mode: 'upload' | 'synthetic' | null;
+  mode: 'upload' | 'synthetic' | 'demo' | null;
+  scenarioId?: string;
   clientName?: string;
   industry?: string;
   painPoints?: string;

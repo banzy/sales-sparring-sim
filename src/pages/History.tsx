@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api, type SessionDetail, type SessionSummary } from "@/lib/api";
+import { useAppStore } from "@/store";
 
 function scoreColor(score: number | null): string {
   if (score === null) return "text-muted-foreground";
@@ -55,11 +56,10 @@ function SessionCard({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all ${
-        isActive
+      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all ${isActive
           ? "border-primary/40 bg-primary/5 shadow-sm"
           : "border-transparent hover:border-border hover:bg-muted/50"
-      }`}
+        }`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-mono text-muted-foreground">#{shortId(session.id)}</span>
@@ -213,6 +213,9 @@ export default function History() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const { contextSetup, setContextSetup } = useAppStore();
+  const activeProjectId = contextSetup.scenarioId;
+
   useEffect(() => {
     api.listSessions().then(list => {
       setSessions(list);
@@ -220,13 +223,23 @@ export default function History() {
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
+  // Group sessions by project id
+  const groupedSessions = sessions.reduce((acc, curr) => {
+    const pid = curr.scenario_id || "Unknown Project";
+    if (!acc[pid]) acc[pid] = [];
+    acc[pid].push(curr);
+    return acc;
+  }, {} as Record<string, SessionSummary[]>);
+
+  const projectIds = Object.keys(groupedSessions);
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
       {/* Left — session list */}
-      <aside className="w-72 shrink-0 border-r border-border flex flex-col">
+      <aside className="w-80 shrink-0 border-r border-border flex flex-col">
         <div className="px-4 py-4 border-b border-border">
           <h1 className="text-sm font-semibold">Session History</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{sessions.length} pitch{sessions.length !== 1 ? "es" : ""} recorded</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{sessions.length} pitch{sessions.length !== 1 ? "es" : ""} recorded across {projectIds.length} project{projectIds.length !== 1 ? "s" : ""}</p>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-0.5">
@@ -241,13 +254,37 @@ export default function History() {
                 No sessions yet. Complete a sparring session to see history here.
               </p>
             )}
-            {sessions.map(s => (
-              <SessionCard
-                key={s.id}
-                session={s}
-                isActive={s.id === selectedId}
-                onClick={() => setSelectedId(s.id)}
-              />
+
+            {projectIds.map(pid => (
+              <div key={pid} className="mb-4">
+                <div className="flex items-center justify-between px-2 py-2 mb-1">
+                  <span className="uppercase tracking-wider w-36 truncate" style={{ color: 'rgba(108, 111, 117, 1)', fontWeight: 800, fontSize: '15px' }}>
+                    {pid.replace("demo-", "").replace("scenario_", "")}
+                  </span>
+                  {activeProjectId === pid ? (
+                    <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4 uppercase tracking-widest bg-success">
+                      Active
+                    </Badge>
+                  ) : (
+                    <button
+                      onClick={() => setContextSetup({ scenarioId: pid })}
+                      className="text-[10px] text-primary hover:underline font-medium"
+                    >
+                      Set Active
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-0.5">
+                  {groupedSessions[pid].map(s => (
+                    <SessionCard
+                      key={s.id}
+                      session={s}
+                      isActive={s.id === selectedId}
+                      onClick={() => setSelectedId(s.id)}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </ScrollArea>

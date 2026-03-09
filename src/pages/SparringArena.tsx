@@ -99,6 +99,9 @@ export default function SparringArena() {
 
   const isHistoricalView = activeTurnIndex < latestTurnIndex;
 
+  const contextSetup = useAppStore(state => state.contextSetup);
+  const scenarioId = contextSetup.scenarioId;
+
   useEffect(() => {
     if (!sparringSession.isActive) {
       startSparringSession();
@@ -106,14 +109,13 @@ export default function SparringArena() {
 
     // Fetch past sessions history
     api.listSessions().then(list => {
-      // Exclude current session and reverse to show oldest first, or just keep top 2
-      setPastSessions(list.filter(s => s.overall_score !== null));
+      // Exclude current session, filter by active scenarioId, reverse to show oldest first
+      const projectSessions = list.filter(s => s.overall_score !== null && s.scenario_id === scenarioId);
+      setPastSessions(projectSessions);
     }).catch(console.error);
-  }, [sparringSession.isActive, startSparringSession]);
+  }, [sparringSession.isActive, startSparringSession, scenarioId]);
 
   const { toast } = useToast();
-  // @ts-ignore
-  const scenarioId = useAppStore(state => state.contextSetup.scenarioId);
 
   const handleSend = async (content?: string) => {
     const text = content || input.trim();
