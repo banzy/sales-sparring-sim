@@ -37,6 +37,37 @@ export const api = {
         };
     },
 
+    /** Load the hardcoded SmartWings demo scenario */
+    async loadDemoClient(): Promise<BriefingData & { scenario_id: string }> {
+        const res = await fetch(`${API_BASE}/load_demo_scenario`, {
+            method: "GET",
+        });
+
+        if (!res.ok) {
+            throw new Error(`API error: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        return {
+            scenario_id: data.scenario_id,
+            clientProfile: {
+                name: data.client_profile.name,
+                size: data.client_profile.size,
+                budgetCycle: data.client_profile.budget_cycle,
+                decisionTimeline: data.client_profile.decision_timeline,
+                buyerPersona: data.client_profile.buyer_persona,
+            },
+            valueProposition: data.value_proposition,
+            buyingConstraints: data.buying_constraints,
+            objections: data.objections.map((o: any) => ({
+                id: o.id,
+                title: o.title,
+                detail: o.detail,
+                tested: o.tested,
+            })),
+        };
+    },
+
     /** Send a message to the adversarial buyer and get a reply */
     async sparringChat(
         scenarioId: string,

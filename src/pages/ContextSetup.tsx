@@ -23,27 +23,31 @@ export default function ContextSetup() {
 
   const { toast } = useToast();
 
-  const handleProcess = async (mode: 'upload' | 'synthetic') => {
+  const handleProcess = async (mode: 'upload' | 'synthetic' | 'demo') => {
     setContextSetup({
-      mode,
-      clientName: mode === 'synthetic' ? clientName : undefined,
-      industry: mode === 'synthetic' ? industry : undefined,
-      painPoints: mode === 'synthetic' ? painPoints : undefined,
+      mode: mode === 'demo' ? 'synthetic' : mode, // Treat demo as synthetic for downstream components
+      clientName: mode === 'synthetic' ? clientName : mode === 'demo' ? 'SmartWings' : undefined,
+      industry: mode === 'synthetic' ? industry : mode === 'demo' ? 'airlines' : undefined,
+      painPoints: mode === 'synthetic' ? painPoints : mode === 'demo' ? 'Pitching Ciklum AI Passenger Tracking' : undefined,
     });
 
     setLoading(true);
 
     try {
-      if (mode === 'synthetic') {
-        const briefingData = await api.generateClient(clientName, industry, painPoints);
+      if (mode === 'synthetic' || mode === 'demo') {
+        const fetchMethod = mode === 'demo'
+          ? api.loadDemoClient()
+          : api.generateClient(clientName, industry, painPoints);
+
+        const briefingData = await fetchMethod;
 
         // Save the scenario ID in context setup so arena can use it,
         // and save the rest of the briefing data into the briefing store.
         setContextSetup({
-          mode,
-          clientName,
-          industry,
-          painPoints,
+          mode: 'synthetic', // Keep the rest of the app thinking it's a synthetic scenario
+          clientName: mode === 'demo' ? 'SmartWings' : clientName,
+          industry: mode === 'demo' ? 'airlines' : industry,
+          painPoints: mode === 'demo' ? 'Pitching Ciklum AI Passenger Tracking' : painPoints,
           // @ts-ignore
           scenarioId: briefingData.scenario_id,
         });
@@ -109,7 +113,7 @@ export default function ContextSetup() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         {/* Option A: Upload */}
         <Card className="glass-card hover:shadow-md transition-all">
           <CardHeader>
@@ -129,11 +133,11 @@ export default function ContextSetup() {
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
               className={`
-                border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer
+                border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[180px]
                 ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"}
               `}
             >
-              <FileText className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+              <FileText className="h-10 w-10 text-muted-foreground/40 mb-3" />
               <p className="text-sm font-medium">Drop files here or click to browse</p>
               <p className="text-xs text-muted-foreground mt-1">PDF, TXT, DOCX up to 10MB</p>
             </div>
@@ -157,7 +161,7 @@ export default function ContextSetup() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-3">
+            <div className="space-y-3 min-h-[180px]">
               <div className="space-y-1.5">
                 <Label htmlFor="client-name" className="text-xs font-medium">Target Client Name</Label>
                 <Input
@@ -181,6 +185,7 @@ export default function ContextSetup() {
                     <SelectItem value="manufacturing">Manufacturing</SelectItem>
                     <SelectItem value="retail">Retail / E-Commerce</SelectItem>
                     <SelectItem value="energy">Energy</SelectItem>
+                    <SelectItem value="airlines">Airlines</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -189,7 +194,7 @@ export default function ContextSetup() {
                 <Textarea
                   id="pain-points"
                   placeholder="Describe the client's challenges..."
-                  rows={3}
+                  rows={2}
                   className="rounded-xl"
                   value={painPoints}
                   onChange={(e) => setPainPoints(e.target.value)}
@@ -199,6 +204,40 @@ export default function ContextSetup() {
             <Button className="w-full rounded-xl" onClick={() => handleProcess('synthetic')}>
               <Sparkles className="h-4 w-4 mr-2" />
               Generate Synthetic World
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Option C: Load Demo */}
+        <Card className="glass-card hover:shadow-md transition-all border-primary/50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider z-10">
+            Recommended
+          </div>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-base text-primary">Load SmartWings Demo</CardTitle>
+                <CardDescription className="text-xs">Pre-configured airline scenario</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-xl p-4 text-sm text-center min-h-[180px] flex flex-col justify-center items-center gap-3 border border-border">
+              <p className="text-muted-foreground">
+                Pitch Ciklum's <span className="font-semibold text-foreground">AI Passenger Activity Tracking</span> to SmartWings.
+              </p>
+              <FileText className="h-8 w-8 text-muted-foreground/50 mx-auto" />
+              <p className="text-[11px] text-muted-foreground mt-2 max-w-[200px] leading-relaxed">
+                Client: SmartWings (Czech Airlines)<br />
+                Sector: Airlines<br />
+                Goal: Sell full-cycle AI tracking system
+              </p>
+            </div>
+            <Button className="w-full rounded-xl bg-primary hover:bg-primary/90" onClick={() => handleProcess('demo')}>
+              Start SmartWings Demo
             </Button>
           </CardContent>
         </Card>
