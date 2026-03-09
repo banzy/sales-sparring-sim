@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { TrendingUp, TrendingDown, MessageSquare, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, MessageSquare, AlertCircle, CheckCircle2, XCircle, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,6 +33,7 @@ export default function Performance() {
           strengths: result.strengths,
           weaknesses: result.weaknesses,
           aiFeedback: result.aiFeedback,
+          evolutionAnalysis: result.evolutionAnalysis,
         });
 
         // Use the returned nextDifficulty to update local store difficulty
@@ -184,6 +185,22 @@ export default function Performance() {
           <p>{performance.aiFeedback}</p>
         </CardContent>
       </Card>
+
+      {performance.evolutionAnalysis && (
+        <Card className="glass-card border-primary/20 bg-primary/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-xl bg-primary/20 flex items-center justify-center">
+                <History className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-foreground">Evolution & History</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="text-sm text-foreground leading-relaxed font-medium">
+            <p>{performance.evolutionAnalysis}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <Alert className="border-border bg-muted/50 rounded-2xl">
         <AlertCircle className="h-4 w-4 text-primary" />

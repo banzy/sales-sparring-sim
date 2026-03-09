@@ -116,6 +116,7 @@ export const api = {
             strengths: data.strengths,
             weaknesses: data.weaknesses,
             aiFeedback: data.ai_feedback,
+            evolutionAnalysis: data.evolution_analysis,
             nextDifficulty: data.next_difficulty,
         } as PerformanceData & { nextDifficulty: string };
     }

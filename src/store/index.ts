@@ -63,6 +63,7 @@ export interface PerformanceData {
   strengths: string[];
   weaknesses: string[];
   aiFeedback: string;
+  evolutionAnalysis: string;
 }
 
 interface AppState {
@@ -70,19 +71,19 @@ interface AppState {
   briefing: BriefingData;
   sparringSession: SparringSession;
   performance: PerformanceData;
-  
+
   setContextSetup: (data: Partial<ContextSetupData>) => void;
   setBriefing: (data: Partial<BriefingData>) => void;
-  
+
   startSparringSession: () => void;
   endSparringSession: () => void;
   addMessage: (message: Message) => void;
   setInputMode: (mode: 'text' | 'recording' | 'processing') => void;
   updateSessionStats: (stats: Partial<SparringSession['sessionStats']>) => void;
   markObjectionTested: (objectionId: string) => void;
-  
+
   setPerformance: (data: Partial<PerformanceData>) => void;
-  
+
   resetAll: () => void;
 }
 
@@ -122,9 +123,9 @@ export const useAppStore = create<AppState>()(
         contextSetup: {
           mode: null,
         },
-        
+
         briefing: defaultBriefing,
-        
+
         sparringSession: {
           isActive: false,
           messages: defaultMessages,
@@ -139,7 +140,7 @@ export const useAppStore = create<AppState>()(
             exchanges: 0,
           },
         },
-        
+
         performance: {
           overallScore: 0,
           objectionHandling: 0,
@@ -147,18 +148,19 @@ export const useAppStore = create<AppState>()(
           strengths: [],
           weaknesses: [],
           aiFeedback: '',
+          evolutionAnalysis: '',
         },
-        
+
         setContextSetup: (data) =>
           set((state) => ({
             contextSetup: { ...state.contextSetup, ...data },
           })),
-        
+
         setBriefing: (data) =>
           set((state) => ({
             briefing: { ...state.briefing, ...data },
           })),
-        
+
         startSparringSession: () =>
           set((state) => ({
             sparringSession: {
@@ -170,7 +172,7 @@ export const useAppStore = create<AppState>()(
               },
             },
           })),
-        
+
         endSparringSession: () =>
           set((state) => ({
             sparringSession: {
@@ -178,7 +180,7 @@ export const useAppStore = create<AppState>()(
               isActive: false,
             },
           })),
-        
+
         addMessage: (message) =>
           set((state) => ({
             sparringSession: {
@@ -190,9 +192,9 @@ export const useAppStore = create<AppState>()(
               },
             },
           })),
-        
-        setInputMode: () => {},
-        
+
+        setInputMode: () => { },
+
         updateSessionStats: (stats) =>
           set((state) => ({
             sparringSession: {
@@ -203,7 +205,7 @@ export const useAppStore = create<AppState>()(
               },
             },
           })),
-        
+
         markObjectionTested: (objectionId) =>
           set((state) => ({
             sparringSession: {
@@ -213,12 +215,12 @@ export const useAppStore = create<AppState>()(
               ),
             },
           })),
-        
+
         setPerformance: (data) =>
           set((state) => ({
             performance: { ...state.performance, ...data },
           })),
-        
+
         resetAll: () =>
           set({
             contextSetup: { mode: null },
@@ -244,6 +246,7 @@ export const useAppStore = create<AppState>()(
               strengths: [],
               weaknesses: [],
               aiFeedback: '',
+              evolutionAnalysis: '',
             },
           }),
       }),

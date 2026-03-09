@@ -102,4 +102,5 @@ class EvaluateSessionResponse(BaseModel):
     strengths: list[str]
     weaknesses: list[str]
     ai_feedback: str
+    evolution_analysis: str
     next_difficulty: str

@@ -31,22 +31,45 @@ Return valid JSON exactly matching this structure:
   "communication_clarity": 80, // 0-100 scale
   "strengths": ["string", "string", "string"],
   "weaknesses": ["string", "string", "string"],
-  "ai_feedback": "A paragraph summarizing their performance and offering actionable advice."
+  "ai_feedback": "A paragraph summarizing their performance and offering actionable advice.",
+  "evolution_analysis": "An explicit paragraph directed at the user analyzing their evolution. Compare this session against any previous weaknesses provided. State whether they improved, stagnated, or need to focus differently. Provide targeted advice for their next iteration."
 }"""
 
 
-def score_session(scenario: dict, transcript: list[dict]) -> dict:
-    """Evaluate a full chat transcript and return complete scorecard."""
+def score_session(scenario: dict, transcript: list[dict], user_profile: dict = None) -> dict:
+    """Evaluate a full chat transcript and return complete scorecard, factoring in history."""
     
     constraints = "\n".join(f"- {c}" for c in scenario.get("buying_constraints", []))
     objections = "\n".join(f"- {o['title']}: {o['detail']}" for o in scenario.get("objections", []))
     
+    history_context = ""
+    if user_profile and user_profile.get("sessions_count", 0) > 0:
+        prev_weaknesses = "\n".join(f"- {w}" for w in user_profile.get("priority_weaknesses", []))
+        if prev_weaknesses:
+            history_context = f"""
+--- HISTORICAL CONTEXT (Past Weaknesses) ---
+The seller has completed {user_profile.get("sessions_count")} previous sessions.
+Their main priority weaknesses from the last session were:
+{prev_weaknesses}
+Pay close attention to whether they have explicitly improved on these weaknesses in this transcript.
+"""
+        else:
+            history_context = f"""
+--- HISTORICAL CONTEXT ---
+The seller has completed {user_profile.get("sessions_count")} previous sessions.
+"""
+    else:
+        history_context = """
+--- HISTORICAL CONTEXT ---
+This is the seller's first session. Welcome them and give baseline advice for future evolution.
+"""
+
     context = f"""--- SCENARIO CONSTRAINTS ---
 {constraints}
 
 --- ANTICIPATED OBJECTIONS ---
 {objections}
-
+{history_context}
 --- TRANSCRIPT ---
 """
     for msg in transcript:

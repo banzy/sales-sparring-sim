@@ -15,8 +15,9 @@ def evaluate_session(request: EvaluateSessionRequest):
         scenario = get_scenario(request.scenario_id)
         transcript = [{"role": msg.role, "content": msg.content} for msg in request.transcript]
         
-        # 1. Run LLM judge
-        eval_result = evaluation_engine.score_session(scenario, transcript)
+        # 1. Retrieve user history & run LLM judge
+        user_profile = session_store.get_user_profile(request.user_id)
+        eval_result = evaluation_engine.score_session(scenario, transcript, user_profile)
         
         # 2. Extract metrics
         overall_score = eval_result.get("overall_score", 0)
