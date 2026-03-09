@@ -61,50 +61,8 @@ export default function SparringArena() {
   const [recordingStart, setRecordingStart] = useState(0);
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
 
-  const [isWorkerReady, setIsWorkerReady] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
-
-  const workerRef = useRef<Worker | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-
-  useEffect(() => {
-    // Initialize Web Worker for Whisper
-    workerRef.current = new Worker(new URL('../workers/whisper.ts', import.meta.url), {
-      type: 'module'
-    });
-
-    workerRef.current.onmessage = (e) => {
-      const { status, text, error } = e.data;
-      console.log("[Worker] onmessage received:", e.data);
-      if (status === 'ready') {
-        setIsWorkerReady(true);
-      } else if (status === 'progress') {
-        if (e.data.data && typeof e.data.data.progress === 'number') {
-          setDownloadProgress(Math.round(e.data.data.progress));
-        }
-      } else if (status === 'transcribing') {
-        setIsTranscribing(true);
-      } else if (status === 'complete') {
-        setIsTranscribing(false);
-        setInput((prev) => prev + (prev ? " " : "") + text.trim());
-        setInputMode("text"); // Return to text mode with transcription ready to send
-      } else if (status === 'error') {
-        setIsTranscribing(false);
-        setInputMode("text");
-        // Using console.error as toast cannot easily be imported inside the event without dependency issues; well, it's defined below.
-        console.error("Transcription Error:", error);
-      }
-    };
-
-    // Trigger load sequence
-    workerRef.current.postMessage({ type: 'load' });
-
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
 
   // Parse messages into an array of iterations/turns
   const turns = useMemo(() => {
@@ -242,20 +200,27 @@ export default function SparringArena() {
         setInputMode("processing");
 
         try {
-          console.log("[Audio] Blob size:", blob.size);
-          const arrayBuffer = await blob.arrayBuffer();
-          console.log("[Audio] ArrayBuffer byteLength:", arrayBuffer.byteLength);
+          // Send blob via HTTP to backend
+          const formData = new FormData();
+          formData.append('file', blob, 'audio.webm');
 
-          // Decode audio and resample to 16kHz
-          const audioContext = new AudioContext({ sampleRate: 16000 });
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-          const float32Data = audioBuffer.getChannelData(0);
-          console.log("[Audio] Final float32 length:", float32Data.length);
+          const response = await fetch('http://localhost:8000/api/stt', {
+            method: 'POST',
+            body: formData,
+          });
 
-          workerRef.current?.postMessage({ type: 'transcribe', audio: float32Data });
+          if (!response.ok) {
+            throw new Error(`Server returned status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data && data.text) {
+            setInput((prev) => prev + (prev ? " " : "") + data.text.trim());
+          }
+          setInputMode("text");
         } catch (error) {
           console.error("[Audio] DECODE ERROR:", error);
-          toast({ variant: "destructive", title: "Audio Decoding Error", description: String(error) });
+          toast({ variant: "destructive", title: "Transcription Error", description: String(error) });
           setInputMode("text");
         }
       };
@@ -362,17 +327,10 @@ export default function SparringArena() {
                     </Button>
                     <button
                       onClick={startRecording}
-                      disabled={!isWorkerReady}
-                      title={!isWorkerReady ? "Downloading Voice Model..." : "Start Recording"}
-                      className={`shrink-0 h-11 w-11 rounded-full flex items-center justify-center transition-colors shadow-md ${!isWorkerReady ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                      title={"Start Recording"}
+                      className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
                     >
-                      {!isWorkerReady && downloadProgress !== null ? (
-                        <span className="text-[10px] font-bold">{downloadProgress}%</span>
-                      ) : !isWorkerReady ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Mic className="h-5 w-5" />
-                      )}
+                      <Mic className="h-5 w-5" />
                     </button>
                   </>
                 )}
@@ -399,9 +357,7 @@ export default function SparringArena() {
                 {inputMode === "processing" && (
                   <div className="flex-1 flex items-center justify-center gap-2 py-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm font-medium">
-                      {isTranscribing ? "Transcribing Voice..." : "Analyzing Pitch..."}
-                    </span>
+                    <span className="text-sm font-medium">Transcribing Voice...</span>
                   </div>
                 )}
               </>

@@ -1,6 +1,20 @@
 /** Helper functions for interacting with the FastAPI backend. */
 import type { BriefingData, Message, PerformanceData, SparringSession } from '../store';
 
+export interface SessionSummary {
+    id: string;
+    scenario_id: string;
+    created_at: string | null;
+    overall_score: number | null;
+    objection_handling: number | null;
+    communication_clarity: number | null;
+    weaknesses: string[];
+}
+
+export interface SessionDetail extends SessionSummary {
+    transcript: Array<{ role: string; content: string }>;
+}
+
 const API_BASE = '/api';
 
 export const api = {
@@ -119,5 +133,20 @@ export const api = {
             evolutionAnalysis: data.evolution_analysis,
             nextDifficulty: data.next_difficulty,
         } as PerformanceData & { nextDifficulty: string };
-    }
+    },
+
+    /** List all past sessions for the default user */
+    async listSessions(): Promise<SessionSummary[]> {
+        const res = await fetch(`${API_BASE}/sessions`);
+        if (!res.ok) throw new Error(`API error: ${res.statusText}`);
+        const data = await res.json();
+        return data.sessions as SessionSummary[];
+    },
+
+    /** Fetch full detail for a single session */
+    async getSession(sessionId: string): Promise<SessionDetail> {
+        const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
+        if (!res.ok) throw new Error(`API error: ${res.statusText}`);
+        return await res.json() as SessionDetail;
+    },
 };

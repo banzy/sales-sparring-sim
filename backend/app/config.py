@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     qdrant_api_key: str
     qdrant_collection: str = "sales_sparring_kb"
 
+    # Hugging Face
+    hf_token: str | None = None
+
     # Database
     database_url: str = "sqlite:///./sparring.db"
 

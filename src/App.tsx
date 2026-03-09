@@ -8,6 +8,7 @@ import ContextSetup from "./pages/ContextSetup";
 import Briefing from "./pages/Briefing";
 import SparringArena from "./pages/SparringArena";
 import Performance from "./pages/Performance";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/briefing" element={<Briefing />} />
             <Route path="/arena" element={<SparringArena />} />
             <Route path="/performance" element={<Performance />} />
+            <Route path="/history" element={<History />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

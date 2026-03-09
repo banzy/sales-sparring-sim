@@ -119,6 +119,65 @@ def get_user_profile(user_id: str) -> dict:
         db.close()
 
 
+def get_all_sessions(user_id: str) -> list[dict]:
+    """Return all sessions for a user, joined with their scores, newest first."""
+    db = _make_session()
+    try:
+        sessions = (
+            db.query(Session)
+            .filter_by(user_id=user_id)
+            .order_by(Session.created_at.desc())
+            .all()
+        )
+        results = []
+        for s in sessions:
+            score = (
+                db.query(SessionScore)
+                .filter_by(session_id=s.id)
+                .order_by(SessionScore.created_at.desc())
+                .first()
+            )
+            results.append({
+                "id": s.id,
+                "scenario_id": s.scenario_id,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "overall_score": score.overall_score if score else None,
+                "objection_handling": score.objection_handling if score else None,
+                "communication_clarity": score.communication_clarity if score else None,
+                "weaknesses": json.loads(score.weaknesses_json) if score and score.weaknesses_json else [],
+            })
+        return results
+    finally:
+        db.close()
+
+
+def get_session_detail(session_id: str) -> dict | None:
+    """Return a single session with its transcript and score."""
+    db = _make_session()
+    try:
+        s = db.query(Session).filter_by(id=session_id).first()
+        if not s:
+            return None
+        score = (
+            db.query(SessionScore)
+            .filter_by(session_id=session_id)
+            .order_by(SessionScore.created_at.desc())
+            .first()
+        )
+        return {
+            "id": s.id,
+            "scenario_id": s.scenario_id,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+            "transcript": json.loads(s.transcript_json) if s.transcript_json else [],
+            "overall_score": score.overall_score if score else None,
+            "objection_handling": score.objection_handling if score else None,
+            "communication_clarity": score.communication_clarity if score else None,
+            "weaknesses": json.loads(score.weaknesses_json) if score and score.weaknesses_json else [],
+        }
+    finally:
+        db.close()
+
+
 def update_user_profile(user_id: str, score_data: dict) -> dict:
     """Escalate difficulty and track weaknesses after each session."""
     db = _make_session()
