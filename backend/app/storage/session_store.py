@@ -49,6 +49,13 @@ class SparringProfile(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 
+class Scenario(Base):
+    __tablename__ = "scenarios"
+    scenario_id = Column(String, primary_key=True)
+    scenario_json = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 def _engine():
     settings = get_settings()
     return create_engine(settings.database_url, connect_args={"check_same_thread": False})
@@ -203,5 +210,31 @@ def update_user_profile(user_id: str, score_data: dict) -> dict:
         db.commit()
 
         return get_user_profile(user_id)
+    finally:
+        db.close()
+
+
+def save_scenario(scenario_id: str, scenario_data: dict) -> None:
+    """Persist a scenario to the database."""
+    db = _make_session()
+    try:
+        record = Scenario(
+            scenario_id=scenario_id,
+            scenario_json=json.dumps(scenario_data),
+        )
+        db.merge(record)
+        db.commit()
+    finally:
+        db.close()
+
+
+def get_scenario(scenario_id: str) -> dict | None:
+    """Retrieve a scenario from the database."""
+    db = _make_session()
+    try:
+        scenario = db.query(Scenario).filter_by(scenario_id=scenario_id).first()
+        if not scenario:
+            return None
+        return json.loads(scenario.scenario_json)
     finally:
         db.close()

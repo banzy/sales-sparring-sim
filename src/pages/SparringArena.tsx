@@ -204,7 +204,7 @@ export default function SparringArena() {
           const formData = new FormData();
           formData.append('file', blob, 'audio.webm');
 
-          const response = await fetch('http://localhost:8000/api/stt', {
+          const response = await fetch('/api/stt', {
             method: 'POST',
             body: formData,
           });

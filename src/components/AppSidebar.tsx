@@ -20,7 +20,7 @@ const navItems = [
   { title: "Context Setup", url: "/", icon: Settings },
   { title: "Briefing & Materials", url: "/briefing", icon: FileText },
   { title: "Sparring Arena", url: "/arena", icon: Swords },
-  { title: "Performance & History", url: "/performance", icon: BarChart3 },
+  { title: "Performance", url: "/performance", icon: BarChart3 },
   { title: "History", url: "/history", icon: ClockIcon },
 ];
 
