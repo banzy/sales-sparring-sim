@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:all": "concurrently \"npm run dev\" \"cd backend && ./.venv/bin/uvicorn app.main:app --reload\"",
+    "dev:all": "concurrently \"npm run dev\" \"cd backend && ./.venv/bin/python -m app.main\"",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

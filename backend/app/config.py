@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -18,6 +19,11 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "sqlite:///./sparring.db"
+
+    @field_validator("openai_api_key", "qdrant_api_key")
+    @classmethod
+    def strip_api_keys(cls, v: str) -> str:
+        return v.strip() if v else v
 
     class Config:
         env_file = ".env"
