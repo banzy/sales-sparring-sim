@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,41 @@ export default function SparringArena() {
   const [input, setInput] = useState("");
   const [inputMode, setInputMode] = useState<InputMode>("text");
   const [recordingStart, setRecordingStart] = useState(0);
+  const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
+
+  // Parse messages into an array of iterations/turns
+  const turns = useMemo(() => {
+    const parsedTurns: Message[][] = [];
+    let currentTurn: Message[] = [];
+
+    sparringSession.messages.forEach(msg => {
+      // A new turn starts when a seller sends a message, providing we already have messages in the current turn
+      if (msg.role === 'seller' && currentTurn.length > 0 && currentTurn.some(m => m.role === 'buyer')) {
+        parsedTurns.push([...currentTurn]);
+        currentTurn = [msg];
+      } else {
+        currentTurn.push(msg);
+      }
+    });
+
+    // push the final turn
+    if (currentTurn.length > 0) {
+      parsedTurns.push(currentTurn);
+    }
+    return parsedTurns;
+  }, [sparringSession.messages]);
+
+  const latestTurnIndex = turns.length > 0 ? turns.length - 1 : 0;
+  // If selectedTurn is null or out of bounds, use the latest turn
+  const activeTurnIndex = selectedTurn !== null && selectedTurn <= latestTurnIndex ? selectedTurn : latestTurnIndex;
+
+  // Calculate which messages to show (all messages up to the end of the selected turn)
+  const displayedMessages = useMemo(() => {
+    const endOfTurn = turns.slice(0, activeTurnIndex + 1);
+    return endOfTurn.flat();
+  }, [turns, activeTurnIndex]);
+
+  const isHistoricalView = activeTurnIndex < latestTurnIndex;
 
   useEffect(() => {
     if (!sparringSession.isActive) {
@@ -120,6 +155,8 @@ export default function SparringArena() {
       });
     } finally {
       setInputMode("text");
+      // ensure we snap back to the latest turn when sending
+      setSelectedTurn(null);
     }
   };
 
@@ -144,32 +181,56 @@ export default function SparringArena() {
       {/* Chat Area - 70% */}
       <div className="flex-[7] flex flex-col min-w-0">
         <div className="px-6 py-3.5 border-b border-border bg-background">
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            <span className="text-sm font-medium">Live Sparring Session</span>
-            <Badge variant="secondary" className="text-[10px] font-mono ml-2 rounded-lg">REC</Badge>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`h-2 w-2 rounded-full ${isHistoricalView ? 'bg-muted-foreground' : 'bg-success animate-pulse'}`} />
+              <span className="text-sm font-medium">
+                {isHistoricalView ? 'Historical View' : 'Live Sparring Session'}
+              </span>
+              {!isHistoricalView && <Badge variant="secondary" className="text-[10px] font-mono ml-2 rounded-lg">REC</Badge>}
+            </div>
+
+            {/* Iteration Navigator */}
+            {turns.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-muted/50 p-1 rounded-lg">
+                <History className="h-3.5 w-3.5 text-muted-foreground ml-2" />
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mr-1">Turns</span>
+                {turns.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedTurn(idx)}
+                    className={`h-6 min-w-[24px] px-2 rounded-md text-xs font-medium transition-colors ${idx === activeTurnIndex
+                      ? 'bg-background shadow-sm text-foreground'
+                      : 'text-muted-foreground hover:bg-background/50'
+                      }`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         <ScrollArea className="flex-1 px-6 py-4 bg-muted/30">
           <div className="space-y-4 max-w-2xl">
-            {sparringSession.messages.map((msg) => (
+            {displayedMessages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex gap-3 ${msg.role === "seller" ? "flex-row-reverse" : ""}`}
               >
                 <div
                   className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${msg.role === "buyer"
-                      ? "bg-muted text-muted-foreground"
-                      : "bg-muted text-muted-foreground"
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-muted text-muted-foreground"
                     }`}
                 >
                   {msg.role === "buyer" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                 </div>
                 <div
                   className={`rounded-2xl px-4 py-3 text-sm max-w-[80%] ${msg.role === "buyer"
-                      ? "bg-card border border-border text-foreground rounded-tl-md"
-                      : "bg-primary text-primary-foreground rounded-tr-md"
+                    ? "bg-card border border-border text-foreground rounded-tl-md"
+                    : "bg-primary text-primary-foreground rounded-tr-md"
                     }`}
                 >
                   {msg.content}
@@ -181,51 +242,71 @@ export default function SparringArena() {
 
         <div className="px-6 py-4 border-t border-border bg-background">
           <div className="flex gap-2 max-w-2xl items-center">
-            {inputMode === "text" && (
-              <>
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder="Type your response..."
-                  className="flex-1 rounded-xl"
-                />
-                <Button onClick={() => handleSend()} disabled={!input.trim()} className="shrink-0 rounded-xl">
-                  <Send className="h-4 w-4" />
-                </Button>
-                <button
-                  onClick={startRecording}
-                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
-                >
-                  <Mic className="h-5 w-5" />
-                </button>
-              </>
-            )}
-
-            {inputMode === "recording" && (
-              <>
-                <div className="flex-1 flex items-center gap-3 bg-muted rounded-xl px-4 py-2">
-                  <div className="h-3 w-3 rounded-full bg-destructive animate-pulse shrink-0" />
-                  <AudioWaveform />
-                  <RecordingTimer startTime={recordingStart} />
+            {isHistoricalView ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-2 bg-muted/40 rounded-xl border border-dashed border-border/60">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <History className="h-4 w-4" />
+                  <span className="text-sm font-medium">Viewing Past Iteration (Read Only)</span>
                 </div>
-                <Button size="icon" variant="destructive" onClick={cancelRecording} className="shrink-0 rounded-xl">
-                  <X className="h-4 w-4" />
-                </Button>
-                <button
-                  onClick={sendRecording}
-                  className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTurn(latestTurnIndex)}
+                  className="rounded-lg h-8 border-primary/20 text-primary hover:bg-primary/10"
                 >
-                  <Check className="h-5 w-5" />
-                </button>
-              </>
-            )}
-
-            {inputMode === "processing" && (
-              <div className="flex-1 flex items-center justify-center gap-2 py-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm font-medium">Analyzing Pitch...</span>
+                  <PlayCircle className="h-3.5 w-3.5 mr-2" />
+                  Return to Active Session
+                </Button>
               </div>
+            ) : (
+              <>
+                {inputMode === "text" && (
+                  <>
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                      placeholder="Type your response..."
+                      className="flex-1 rounded-xl"
+                    />
+                    <Button onClick={() => handleSend()} disabled={!input.trim()} className="shrink-0 rounded-xl">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                    <button
+                      onClick={startRecording}
+                      className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
+                    >
+                      <Mic className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
+
+                {inputMode === "recording" && (
+                  <>
+                    <div className="flex-1 flex items-center gap-3 bg-muted rounded-xl px-4 py-2">
+                      <div className="h-3 w-3 rounded-full bg-destructive animate-pulse shrink-0" />
+                      <AudioWaveform />
+                      <RecordingTimer startTime={recordingStart} />
+                    </div>
+                    <Button size="icon" variant="destructive" onClick={cancelRecording} className="shrink-0 rounded-xl">
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <button
+                      onClick={sendRecording}
+                      className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
+                    >
+                      <Check className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
+
+                {inputMode === "processing" && (
+                  <div className="flex-1 flex items-center justify-center gap-2 py-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm font-medium">Analyzing Pitch...</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -234,6 +315,18 @@ export default function SparringArena() {
       {/* HUD Panel - 30% */}
       <div className="flex-[3] hud-panel flex flex-col border-l overflow-auto">
         <div className="p-5 space-y-5">
+          {isHistoricalView && (
+            <div className="bg-muted/60 border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 font-medium mb-1.5">
+                <History className="h-4 w-4 text-muted-foreground" />
+                Turn {activeTurnIndex + 1} Review
+              </div>
+              <p className="text-xs text-muted-foreground text-balance leading-relaxed">
+                You are reviewing a past exchange. Active objections and session stats reflect the session up to this turn.
+              </p>
+            </div>
+          )}
+
           <div>
             <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-1">
               Current Persona
@@ -291,26 +384,30 @@ export default function SparringArena() {
                 <p className="text-[10px] text-hud-foreground/50">Duration</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-muted/50">
-                <p className="text-lg font-bold font-mono text-hud-foreground">{sparringSession.sessionStats.exchanges}</p>
+                <p className="text-lg font-bold font-mono text-hud-foreground">
+                  {isHistoricalView ? displayedMessages.length : sparringSession.sessionStats.exchanges}
+                </p>
                 <p className="text-[10px] text-hud-foreground/50">Exchanges</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-auto p-5">
-          <Button
-            variant="destructive"
-            className="w-full rounded-xl"
-            onClick={() => {
-              endSparringSession();
-              navigate("/performance");
-            }}
-          >
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            End Sparring Session
-          </Button>
-        </div>
+        {!isHistoricalView && (
+          <div className="mt-auto p-5">
+            <Button
+              variant="destructive"
+              className="w-full rounded-xl"
+              onClick={() => {
+                endSparringSession();
+                navigate("/performance");
+              }}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              End Sparring Session
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
