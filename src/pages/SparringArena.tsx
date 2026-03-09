@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,51 @@ export default function SparringArena() {
   const [inputMode, setInputMode] = useState<InputMode>("text");
   const [recordingStart, setRecordingStart] = useState(0);
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
+
+  const [isWorkerReady, setIsWorkerReady] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+
+  const workerRef = useRef<Worker | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    // Initialize Web Worker for Whisper
+    workerRef.current = new Worker(new URL('../workers/whisper.ts', import.meta.url), {
+      type: 'module'
+    });
+
+    workerRef.current.onmessage = (e) => {
+      const { status, text, error } = e.data;
+      console.log("[Worker] onmessage received:", e.data);
+      if (status === 'ready') {
+        setIsWorkerReady(true);
+      } else if (status === 'progress') {
+        if (e.data.data && typeof e.data.data.progress === 'number') {
+          setDownloadProgress(Math.round(e.data.data.progress));
+        }
+      } else if (status === 'transcribing') {
+        setIsTranscribing(true);
+      } else if (status === 'complete') {
+        setIsTranscribing(false);
+        setInput((prev) => prev + (prev ? " " : "") + text.trim());
+        setInputMode("text"); // Return to text mode with transcription ready to send
+      } else if (status === 'error') {
+        setIsTranscribing(false);
+        setInputMode("text");
+        // Using console.error as toast cannot easily be imported inside the event without dependency issues; well, it's defined below.
+        console.error("Transcription Error:", error);
+      }
+    };
+
+    // Trigger load sequence
+    workerRef.current.postMessage({ type: 'load' });
+
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
 
   // Parse messages into an array of iterations/turns
   const turns = useMemo(() => {
@@ -160,20 +205,63 @@ export default function SparringArena() {
     }
   };
 
-  const startRecording = () => {
-    setInputMode("recording");
-    setRecordingStart(Date.now());
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.start();
+      console.log("[Audio] MediaRecorder started.");
+      setInputMode("recording");
+      setRecordingStart(Date.now());
+    } catch (err) {
+      toast({ variant: "destructive", title: "Microphone Access Denied" });
+    }
   };
 
   const cancelRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
     setInputMode("text");
   };
 
   const sendRecording = () => {
-    setInputMode("processing");
-    setTimeout(() => {
-      handleSend("I understand your concern about the timeline. Let me walk you through our phased implementation plan that accounts for compliance checkpoints at every stage.");
-    }, 2000);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+
+        setInputMode("processing");
+
+        try {
+          console.log("[Audio] Blob size:", blob.size);
+          const arrayBuffer = await blob.arrayBuffer();
+          console.log("[Audio] ArrayBuffer byteLength:", arrayBuffer.byteLength);
+
+          // Decode audio and resample to 16kHz
+          const audioContext = new AudioContext({ sampleRate: 16000 });
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          const float32Data = audioBuffer.getChannelData(0);
+          console.log("[Audio] Final float32 length:", float32Data.length);
+
+          workerRef.current?.postMessage({ type: 'transcribe', audio: float32Data });
+        } catch (error) {
+          console.error("[Audio] DECODE ERROR:", error);
+          toast({ variant: "destructive", title: "Audio Decoding Error", description: String(error) });
+          setInputMode("text");
+        }
+      };
+
+      mediaRecorderRef.current.stop();
+    }
   };
 
   return (
@@ -274,9 +362,17 @@ export default function SparringArena() {
                     </Button>
                     <button
                       onClick={startRecording}
-                      className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
+                      disabled={!isWorkerReady}
+                      title={!isWorkerReady ? "Downloading Voice Model..." : "Start Recording"}
+                      className={`shrink-0 h-11 w-11 rounded-full flex items-center justify-center transition-colors shadow-md ${!isWorkerReady ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
                     >
-                      <Mic className="h-5 w-5" />
+                      {!isWorkerReady && downloadProgress !== null ? (
+                        <span className="text-[10px] font-bold">{downloadProgress}%</span>
+                      ) : !isWorkerReady ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mic className="h-5 w-5" />
+                      )}
                     </button>
                   </>
                 )}
@@ -303,7 +399,9 @@ export default function SparringArena() {
                 {inputMode === "processing" && (
                   <div className="flex-1 flex items-center justify-center gap-2 py-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm font-medium">Analyzing Pitch...</span>
+                    <span className="text-sm font-medium">
+                      {isTranscribing ? "Transcribing Voice..." : "Analyzing Pitch..."}
+                    </span>
                   </div>
                 )}
               </>
