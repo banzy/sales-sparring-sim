@@ -19,6 +19,14 @@ export interface SessionDetail extends SessionSummary {
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") || "/api";
 
+function getErrorMessage(fallback: string, detail: any): string {
+    if (typeof detail === "string" && detail.trim()) {
+        return detail;
+    }
+
+    return fallback;
+}
+
 function mapClientResearch(data: any): ClientResearch | null {
     if (!data) {
         return null;
@@ -101,6 +109,42 @@ export const api = {
                 tested: o.tested,
             })),
         };
+    },
+
+    async getClientResearch(scenarioId: string): Promise<ClientResearch | null> {
+        const res = await fetch(`${API_BASE}/scenarios/${encodeURIComponent(scenarioId)}/client_research`);
+
+        if (!res.ok) {
+            let detail: any = null;
+            try {
+                detail = (await res.json()).detail;
+            } catch {
+                detail = null;
+            }
+            throw new Error(getErrorMessage(`API error: ${res.statusText}`, detail));
+        }
+
+        const data = await res.json();
+        return mapClientResearch(data.client_research);
+    },
+
+    async refreshClientResearch(scenarioId: string): Promise<ClientResearch | null> {
+        const res = await fetch(`${API_BASE}/scenarios/${encodeURIComponent(scenarioId)}/client_research`, {
+            method: "POST",
+        });
+
+        if (!res.ok) {
+            let detail: any = null;
+            try {
+                detail = (await res.json()).detail;
+            } catch {
+                detail = null;
+            }
+            throw new Error(getErrorMessage(`API error: ${res.statusText}`, detail));
+        }
+
+        const data = await res.json();
+        return mapClientResearch(data.client_research);
     },
 
     /** Send a message to the adversarial buyer and get a reply */

@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, HTTPException
 from app.core.llm_client import LLMServiceError
-from app.models.schemas import GenerateClientRequest, GenerateClientResponse
+from app.models.schemas import ClientResearchResponse, GenerateClientRequest, GenerateClientResponse
 from app.modules import scenario_builder
 from app.storage import session_store
 
@@ -47,6 +47,11 @@ def load_demo_scenario():
             "buyer_persona": "CIO or VP of Customer Experience, focused on operational efficiency and passenger satisfaction"
         },
         "client_research": None,
+        "generation_context": {
+            "client_name": "SmartWings",
+            "sector": "airlines",
+            "requirements": "Pitching Ciklum AI Passenger Tracking",
+        },
         "value_proposition": "Ciklum provides a full-cycle passenger activity tracking system driven by AI. It manages interactions from initial ticket purchase to cancellations, claims, and missing luggage. Users can make requests via text, document, or bot calls with clear communication at every step. Post-cycle, AI agents generate metrics and survey results. This radically reduces agent handling time and improves CSAT through predictive analytics.",
         "buying_constraints": [
             "Integrating with legacy flight booking systems",
@@ -89,6 +94,42 @@ def load_demo_scenario():
     
     session_store.save_scenario(demo_scenario["scenario_id"], demo_scenario)
     return demo_scenario
+
+
+@router.get("/scenarios/{scenario_id}/client_research", response_model=ClientResearchResponse)
+def get_client_research(scenario_id: str):
+    """Return the currently saved Perplexity company research for a scenario."""
+    scenario = session_store.get_scenario(scenario_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+
+    return {
+        "scenario_id": scenario_id,
+        "client_research": scenario.get("client_research"),
+    }
+
+
+@router.post("/scenarios/{scenario_id}/client_research", response_model=ClientResearchResponse)
+def refresh_client_research(scenario_id: str):
+    """Request fresh Perplexity company research and persist it on the scenario."""
+    scenario = session_store.get_scenario(scenario_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+
+    try:
+        updated_scenario = scenario_builder.refresh_client_research_for_scenario(scenario)
+        session_store.save_scenario(scenario_id, updated_scenario)
+        return {
+            "scenario_id": scenario_id,
+            "client_research": updated_scenario.get("client_research"),
+        }
+    except LLMServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        logger.exception("Unhandled error in refresh_client_research")
+        raise HTTPException(status_code=500, detail="Unexpected server error.") from e
 
 
 def get_scenario(scenario_id: str) -> dict:

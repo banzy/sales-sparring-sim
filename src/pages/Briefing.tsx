@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, ChevronRight, ChevronsDownUp, ChevronsUpDown, ExternalLink, Globe2, Shield, Target } from "lucide-react";
+import { Building2, ChevronRight, ChevronsDownUp, ChevronsUpDown, ExternalLink, Info, Loader2, Shield, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/store";
+import { api } from "@/lib/api";
 
 const BUYER_PERSONAS = [
   "VP of Operations",
@@ -31,8 +34,12 @@ const PERSONA_DESCRIPTIONS: Record<string, string> = {
 
 export default function Briefing() {
   const navigate = useNavigate();
-  const { briefing, setBriefing } = useAppStore();
+  const { briefing, contextSetup, setBriefing } = useAppStore();
   const [openObjections, setOpenObjections] = useState<string[]>([]);
+  const [companyInfoOpen, setCompanyInfoOpen] = useState(false);
+  const [companyInfoLoading, setCompanyInfoLoading] = useState(false);
+  const [companyInfoError, setCompanyInfoError] = useState<string | null>(null);
+  const [companyInfoOpenedBefore, setCompanyInfoOpenedBefore] = useState(false);
 
   const objectionIds = useMemo(() => briefing.objections.map(o => o.id), [briefing.objections]);
   const allObjectionsOpen = objectionIds.length > 0 && openObjections.length === objectionIds.length;
@@ -41,6 +48,44 @@ export default function Briefing() {
     // Keep state consistent if the objections list changes.
     setOpenObjections(prev => prev.filter(id => objectionIds.includes(id)));
   }, [objectionIds]);
+
+  const loadCompanyResearch = async (refresh = false) => {
+    if (!contextSetup.scenarioId) {
+      setCompanyInfoError("No scenario is active, so company research cannot be loaded.");
+      return;
+    }
+
+    setCompanyInfoLoading(true);
+    setCompanyInfoError(null);
+
+    try {
+      const clientResearch = refresh
+        ? await api.refreshClientResearch(contextSetup.scenarioId)
+        : await api.getClientResearch(contextSetup.scenarioId);
+
+      setBriefing({ clientResearch });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to load company research.";
+      setCompanyInfoError(message);
+    } finally {
+      setCompanyInfoLoading(false);
+    }
+  };
+
+  const handleCompanyInfoButtonClick = () => {
+    const shouldRefresh = companyInfoOpenedBefore;
+    setCompanyInfoOpen(true);
+    setCompanyInfoOpenedBefore(true);
+    void loadCompanyResearch(shouldRefresh);
+  };
+
+  const handleCompanyInfoOpenChange = (open: boolean) => {
+    setCompanyInfoOpen(open);
+
+    if (!open) {
+      setCompanyInfoError(null);
+    }
+  };
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
@@ -71,12 +116,37 @@ export default function Briefing() {
               ["Size", briefing.clientProfile.size],
               ["Budget Cycle", briefing.clientProfile.budgetCycle],
               ["Decision Timeline", briefing.clientProfile.decisionTimeline],
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="font-medium">{value}</span>
-              </div>
-            ))}
+            ].map(([label, value]) => {
+              const isCompanyRow = label === "Company";
+
+              return (
+                <div key={label} className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">{label}</span>
+                  <div className="flex items-center gap-1.5 text-right">
+                    <span className="font-medium">{value}</span>
+                    {isCompanyRow && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-full"
+                            onClick={handleCompanyInfoButtonClick}
+                            aria-label="Open company research"
+                          >
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          View saved Perplexity company information
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
             <div className="flex flex-col items-start gap-2">
               <span className="text-muted-foreground w-full">Buyer Persona</span>
               <select
@@ -136,78 +206,6 @@ export default function Briefing() {
         </Card>
       </div>
 
-      {briefing.clientResearch && (
-        <Card className="glass-card">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-cyan-500/15 dark:bg-cyan-400/15 flex items-center justify-center">
-                <Globe2 className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-300" />
-              </div>
-              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Target Client Research
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {briefing.clientResearch.summary}
-            </p>
-
-            <div className="grid gap-5 md:grid-cols-3">
-              <div className="space-y-2.5">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Key Facts</h3>
-                {briefing.clientResearch.keyFacts.map((fact, index) => (
-                  <div key={`${fact}-${index}`} className="flex items-start gap-2.5 text-sm">
-                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
-                    <span className="text-muted-foreground">{fact}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-2.5">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Strategic Priorities</h3>
-                {briefing.clientResearch.strategicPriorities.map((priority, index) => (
-                  <div key={`${priority}-${index}`} className="flex items-start gap-2.5 text-sm">
-                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
-                    <span className="text-muted-foreground">{priority}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-2.5">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Likely Pain Points</h3>
-                {briefing.clientResearch.potentialPainPoints.map((painPoint, index) => (
-                  <div key={`${painPoint}-${index}`} className="flex items-start gap-2.5 text-sm">
-                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
-                    <span className="text-muted-foreground">{painPoint}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {briefing.clientResearch.sources.length > 0 && (
-              <div className="space-y-2.5">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sources</h3>
-                <div className="flex flex-wrap gap-2">
-                  {briefing.clientResearch.sources.map((source, index) => (
-                    <a
-                      key={`${source.url}-${index}`}
-                      href={source.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:border-primary/40"
-                    >
-                      <span>{source.title}</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="glass-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -253,6 +251,102 @@ export default function Briefing() {
           </Accordion>
         </CardContent>
       </Card>
+
+      <Dialog open={companyInfoOpen} onOpenChange={handleCompanyInfoOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Company Information</DialogTitle>
+            <DialogDescription>
+              Perplexity research saved for {briefing.clientProfile.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            {companyInfoLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading company information from the saved scenario record...
+              </div>
+            ) : companyInfoError ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                {companyInfoError}
+              </div>
+            ) : briefing.clientResearch ? (
+              <>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {briefing.clientResearch.summary}
+                </p>
+
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Key Facts</h3>
+                  {briefing.clientResearch.keyFacts.map((fact, index) => (
+                    <div key={`${fact}-${index}`} className="flex items-start gap-2.5 text-sm">
+                      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
+                      <span className="text-muted-foreground">{fact}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Strategic Priorities</h3>
+                  {briefing.clientResearch.strategicPriorities.map((priority, index) => (
+                    <div key={`${priority}-${index}`} className="flex items-start gap-2.5 text-sm">
+                      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
+                      <span className="text-muted-foreground">{priority}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Likely Pain Points</h3>
+                  {briefing.clientResearch.potentialPainPoints.map((painPoint, index) => (
+                    <div key={`${painPoint}-${index}`} className="flex items-start gap-2.5 text-sm">
+                      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
+                      <span className="text-muted-foreground">{painPoint}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {briefing.clientResearch.sources.length > 0 && (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sources</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {briefing.clientResearch.sources.map((source, index) => (
+                        <a
+                          key={`${source.url}-${index}`}
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:border-primary/40"
+                        >
+                          <span>{source.title}</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                No Perplexity company information has been saved for this scenario yet.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadCompanyResearch(true)}
+              disabled={companyInfoLoading}
+            >
+              {companyInfoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Info className="h-4 w-4" />}
+              {briefing.clientResearch ? "Refresh From Perplexity" : "Request From Perplexity"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

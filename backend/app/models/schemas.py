@@ -61,6 +61,11 @@ class GenerateClientResponse(BaseModel):
     objections: list[Objection]
 
 
+class ClientResearchResponse(BaseModel):
+    scenario_id: str
+    client_research: Optional[ClientResearch] = None
+
+
 # ---------------------------------------------------------------------------
 # Sparring chat
 # ---------------------------------------------------------------------------
