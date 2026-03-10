@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, History } from "lucide-react";
+import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, PauseCircle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,8 @@ export default function SparringArena() {
 
   const [input, setInput] = useState("");
   const [inputMode, setInputMode] = useState<InputMode>("text");
+  const [isDurationPlaying, setIsDurationPlaying] = useState(false);
+  const [displayDuration, setDisplayDuration] = useState(sparringSession.sessionStats.duration);
   const [recordingStart, setRecordingStart] = useState(0);
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
   const [pastSessions, setPastSessions] = useState<SessionSummary[]>([]);
@@ -68,6 +70,22 @@ export default function SparringArena() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
+
+  // Keep local display duration in sync with store when not actively "playing"
+  useEffect(() => {
+    if (!isDurationPlaying) {
+      setDisplayDuration(sparringSession.sessionStats.duration);
+    }
+  }, [sparringSession.sessionStats.duration, isDurationPlaying]);
+
+  // Local play/pause timer for the HUD duration card
+  useEffect(() => {
+    if (!isDurationPlaying) return;
+    const interval = setInterval(() => {
+      setDisplayDuration(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isDurationPlaying]);
 
   // Parse messages into an array of iterations/turns
   const turns = useMemo(() => {
@@ -554,11 +572,25 @@ export default function SparringArena() {
               Session Stats
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 rounded-xl bg-muted/50">
-                <p className="text-lg font-bold font-mono text-hud-foreground">
-                  {Math.floor(sparringSession.sessionStats.duration / 60)}:{String(sparringSession.sessionStats.duration % 60).padStart(2, '0')}
-                </p>
-                <p className="text-[10px] text-hud-foreground/50">Duration</p>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
+                <div className="text-left">
+                  <p className="text-lg font-bold font-mono text-hud-foreground">
+                    {Math.floor(displayDuration / 60)}:{String(displayDuration % 60).padStart(2, '0')}
+                  </p>
+                  <p className="text-[10px] text-hud-foreground/50">Duration</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDurationPlaying(prev => !prev)}
+                  className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  aria-label={isDurationPlaying ? "Pause timer" : "Play timer"}
+                >
+                  {isDurationPlaying ? (
+                    <PauseCircle className="h-5 w-5" />
+                  ) : (
+                    <PlayCircle className="h-5 w-5" />
+                  )}
+                </button>
               </div>
               <div className="text-center p-3 rounded-xl bg-muted/50">
                 <p className="text-lg font-bold font-mono text-hud-foreground">

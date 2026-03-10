@@ -11,6 +11,28 @@ import { useAppStore } from "@/store";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+const BUYER_PERSONAS = [
+  "VP of Operations",
+  "Chief Technology Officer",
+  "Chief Financial Officer",
+  "VP of Sales",
+  "VP of Marketing",
+  "Director of IT",
+  "Head of Procurement",
+  "Chief Risk Officer",
+];
+
+const PERSONA_DESCRIPTIONS: Record<string, string> = {
+  "VP of Operations": "Process-focused, efficiency-driven. Cares about workflow optimization and cost reduction.",
+  "Chief Technology Officer": "Tech-savvy, innovation-oriented. Evaluates based on integration, scalability, and modernization.",
+  "Chief Financial Officer": "Risk-averse, ROI-focused. Demands strong business case and financial guarantees.",
+  "VP of Sales": "Revenue-focused, competitive. Wants tools that improve win rates and deal velocity.",
+  "VP of Marketing": "Brand and demand-focused. Seeks integration with marketing stack and lead generation impact.",
+  "Director of IT": "Security and stability-focused. Prioritizes compliance, support, and operational reliability.",
+  "Head of Procurement": "Negotiation and cost-focused. Evaluates vendor contracts, terms, and TCO carefully.",
+  "Chief Risk Officer": "Compliance and liability-focused. Emphasizes risk mitigation, governance, and regulatory alignment.",
+};
+
 export default function ContextSetup() {
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -20,6 +42,7 @@ export default function ContextSetup() {
   const [clientName, setClientName] = useState(contextSetup.clientName || '');
   const [industry, setIndustry] = useState(contextSetup.industry || '');
   const [painPoints, setPainPoints] = useState(contextSetup.painPoints || '');
+  const [buyerPersona, setBuyerPersona] = useState('VP of Operations');
 
   const { toast } = useToast();
 
@@ -44,7 +67,16 @@ export default function ContextSetup() {
         // Remove scenario_id from briefing before storing it as the types mismatch slightly
         const { scenario_id, ...pureBriefing } = briefingData;
 
-        setBriefing(pureBriefing);
+        // Apply the selected buyer persona to the briefing
+        const briefingWithPersona = {
+          ...pureBriefing,
+          clientProfile: {
+            ...pureBriefing.clientProfile,
+            buyerPersona: mode === 'demo' ? 'VP of Operations' : buyerPersona,
+          },
+        };
+
+        setBriefing(briefingWithPersona);
 
         navigate("/briefing");
       } else {
@@ -150,7 +182,7 @@ export default function ContextSetup() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-3 min-h-[180px]">
+            <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="client-name" className="text-xs font-medium">Target Client Name</Label>
                 <Input
@@ -188,6 +220,20 @@ export default function ContextSetup() {
                   value={painPoints}
                   onChange={(e) => setPainPoints(e.target.value)}
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Buyer Persona</Label>
+                <select
+                  value={buyerPersona}
+                  onChange={(e) => setBuyerPersona(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-background border border-input rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  {BUYER_PERSONAS.map(persona => (
+                    <option key={persona} value={persona}>
+                      {persona}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <Button className="w-full rounded-xl" onClick={() => handleProcess('synthetic')}>

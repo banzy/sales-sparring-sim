@@ -7,9 +7,31 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/store";
 
+const BUYER_PERSONAS = [
+  "VP of Operations",
+  "Chief Technology Officer",
+  "Chief Financial Officer",
+  "VP of Sales",
+  "VP of Marketing",
+  "Director of IT",
+  "Head of Procurement",
+  "Chief Risk Officer",
+];
+
+const PERSONA_DESCRIPTIONS: Record<string, string> = {
+  "VP of Operations": "Process-focused, efficiency-driven. Cares about workflow optimization and cost reduction.",
+  "Chief Technology Officer": "Tech-savvy, innovation-oriented. Evaluates based on integration, scalability, and modernization.",
+  "Chief Financial Officer": "Risk-averse, ROI-focused. Demands strong business case and financial guarantees.",
+  "VP of Sales": "Revenue-focused, competitive. Wants tools that improve win rates and deal velocity.",
+  "VP of Marketing": "Brand and demand-focused. Seeks integration with marketing stack and lead generation impact.",
+  "Director of IT": "Security and stability-focused. Prioritizes compliance, support, and operational reliability.",
+  "Head of Procurement": "Negotiation and cost-focused. Evaluates vendor contracts, terms, and TCO carefully.",
+  "Chief Risk Officer": "Compliance and liability-focused. Emphasizes risk mitigation, governance, and regulatory alignment.",
+};
+
 export default function Briefing() {
   const navigate = useNavigate();
-  const { briefing } = useAppStore();
+  const { briefing, setBriefing } = useAppStore();
   const [openObjections, setOpenObjections] = useState<string[]>([]);
 
   const objectionIds = useMemo(() => briefing.objections.map(o => o.id), [briefing.objections]);
@@ -55,11 +77,27 @@ export default function Briefing() {
                 <span className="font-medium">{value}</span>
               </div>
             ))}
-            <div className="flex flex-col items-start gap-1">
+            <div className="flex flex-col items-start gap-2">
               <span className="text-muted-foreground w-full">Buyer Persona</span>
-              <Badge variant="secondary" className="font-mono text-xs rounded-lg whitespace-normal text-left h-auto py-1.5 leading-snug">
-                {briefing.clientProfile.buyerPersona}
-              </Badge>
+              <select
+                value={briefing.clientProfile.buyerPersona}
+                onChange={(e) => setBriefing({
+                  clientProfile: {
+                    ...briefing.clientProfile,
+                    buyerPersona: e.target.value,
+                  },
+                })}
+                className="w-full px-2.5 py-1.5 text-xs bg-background border border-input rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                {BUYER_PERSONAS.map(persona => (
+                  <option key={persona} value={persona}>
+                    {persona}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground italic">
+                {PERSONA_DESCRIPTIONS[briefing.clientProfile.buyerPersona] || "Select a buyer persona to see their key traits."}
+              </p>
             </div>
           </CardContent>
         </Card>
