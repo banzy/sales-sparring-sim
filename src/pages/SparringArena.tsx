@@ -368,6 +368,11 @@ export default function SparringArena() {
               <span className="text-sm font-medium">
                 {isPastSessionView ? 'Past Session Replay' : isHistoricalView ? 'Historical View' : 'Live Sparring Session'}
               </span>
+              {!isPastSessionView && (
+                <Badge variant="outline" className="text-[10px] font-mono rounded-lg">
+                  Session {currentSessionNumber}
+                </Badge>
+              )}
               {!isReadOnlyView && <Badge variant="secondary" className="text-[10px] font-mono ml-2 rounded-lg">REC</Badge>}
             </div>
 
@@ -644,22 +649,6 @@ export default function SparringArena() {
                       </Badge>
                     </button>
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPastSessionId(null)}
-                    className="w-full text-left flex items-center justify-between p-2 rounded-lg border border-primary/30 bg-primary/10 text-xs relative overflow-hidden"
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-                    <div className="ml-1">
-                      <span className="block text-hud-foreground font-semibold">Current Session</span>
-                      <span className="block text-[10px] uppercase tracking-widest text-primary/70 font-mono">
-                        Session {currentSessionNumber}
-                      </span>
-                    </div>
-                    <Badge variant="outline" className="font-mono text-[10px] rounded px-1.5 py-0 border-primary/50 text-primary">
-                      Live
-                    </Badge>
-                  </button>
                 </div>
               </div>
             </>
