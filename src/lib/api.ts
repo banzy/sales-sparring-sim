@@ -229,7 +229,7 @@ export const api = {
             evolutionAnalysis: data.evolution_analysis,
             nextDifficulty: data.next_difficulty,
             nextFocusAreas: data.next_focus_areas || [],
-        } as PerformanceData & { nextDifficulty: string };
+        } as PerformanceData;
     },
 
     /** List all past sessions for the default user */

@@ -80,6 +80,7 @@ export interface PerformanceData {
   aiFeedback: string;
   evolutionAnalysis: string;
   nextFocusAreas: string[];
+  nextDifficulty?: string;
 }
 
 interface ProjectStateSnapshot {
@@ -412,7 +413,9 @@ export const useAppStore = create<AppState>()(
 
         startSparringSession: () =>
           set((state) => {
-            const shouldCreateFreshSession = state.performance.overallScore > 0;
+            const shouldCreateFreshSession =
+              !state.sparringSession.isActive &&
+              state.sparringSession.sessionStats.exchanges > 0;
             const nextSession = shouldCreateFreshSession
               ? createFreshSparringSession(
                 state.briefing,

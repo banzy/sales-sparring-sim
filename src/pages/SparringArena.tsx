@@ -79,14 +79,10 @@ export default function SparringArena() {
     }
   }, [sparringSession.sessionStats.duration, isDurationPlaying]);
 
-  // Local play/pause timer for the HUD duration card
+  // Keep local display duration in sync with store
   useEffect(() => {
-    if (!isDurationPlaying) return;
-    const interval = setInterval(() => {
-      setDisplayDuration(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isDurationPlaying]);
+    setDisplayDuration(sparringSession.sessionStats.duration);
+  }, [sparringSession.sessionStats.duration]);
 
   // Parse messages into an array of iterations/turns
   const turns = useMemo(() => {
@@ -140,7 +136,7 @@ export default function SparringArena() {
   }, [sparringSession.isActive, startSparringSession, isPastSessionView]);
 
   useEffect(() => {
-    if (!sparringSession.isActive || isReadOnlyView) {
+    if (!sparringSession.isActive || isReadOnlyView || !isDurationPlaying) {
       return;
     }
 
@@ -152,7 +148,7 @@ export default function SparringArena() {
     return () => {
       clearInterval(interval);
     };
-  }, [sparringSession.isActive, isReadOnlyView, updateSessionStats]);
+  }, [sparringSession.isActive, isReadOnlyView, isDurationPlaying, updateSessionStats]);
 
   useEffect(() => {
     if (!scenarioId) {

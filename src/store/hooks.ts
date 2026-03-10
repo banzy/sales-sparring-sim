@@ -69,11 +69,17 @@ export const useSparringSession = () => {
 export const usePerformance = () => {
   const performance = useAppStore((state) => state.performance);
   const setPerformance = useAppStore((state) => state.setPerformance);
+  const hasData =
+    performance.aiFeedback.trim().length > 0 ||
+    performance.evolutionAnalysis.trim().length > 0 ||
+    performance.strengths.length > 0 ||
+    performance.weaknesses.length > 0 ||
+    performance.nextFocusAreas.length > 0;
   
   return {
     performance,
     setPerformance,
-    hasData: performance.overallScore > 0,
+    hasData,
   };
 };
 
