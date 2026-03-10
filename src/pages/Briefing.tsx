@@ -323,7 +323,7 @@ export default function Briefing() {
       </Card>
 
       <Dialog open={companyInfoOpen} onOpenChange={handleCompanyInfoOpenChange}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-xl max-h-[80vh] overflow-hidden p-0">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-[728px] max-h-[80vh] overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 flex flex-row items-start justify-between gap-4">
             <div>
               <DialogTitle>Company Information</DialogTitle>
@@ -336,7 +336,7 @@ export default function Briefing() {
               variant="outline"
               onClick={() => void loadCompanyResearch(true)}
               disabled={companyInfoLoading}
-              className="shrink-0 -mr-5"
+              className="shrink-0 -ml-[68px]"
             >
               {companyInfoLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
