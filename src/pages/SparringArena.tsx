@@ -572,7 +572,7 @@ export default function SparringArena() {
               Session Stats
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 min-w-[140px]">
                 <div className="text-left">
                   <p className="text-lg font-bold font-mono text-hud-foreground">
                     {Math.floor(displayDuration / 60)}:{String(displayDuration % 60).padStart(2, '0')}
@@ -584,7 +584,7 @@ export default function SparringArena() {
                     <button
                       type="button"
                       onClick={() => setIsDurationPlaying(prev => !prev)}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors ml-1.5"
                       aria-label={isDurationPlaying ? "Pause timer" : "Play timer"}
                     >
                       {isDurationPlaying ? (

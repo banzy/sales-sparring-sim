@@ -7,11 +7,12 @@ from app.storage import session_store
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+DEMO_SCENARIO_ID = "demo-smartwings-123"
 
 
 def _default_demo_scenario() -> dict:
     return {
-        "scenario_id": "demo-smartwings-123",
+        "scenario_id": DEMO_SCENARIO_ID,
         "client_profile": {
             "name": "SmartWings",
             "size": "Enterprise (Airline)",
@@ -97,6 +98,19 @@ def _merge_demo_scenario(stored_scenario: dict | None) -> dict:
     return merged_scenario
 
 
+def _load_scenario_record(scenario_id: str) -> dict:
+    if scenario_id == DEMO_SCENARIO_ID:
+        stored_scenario = session_store.get_scenario(DEMO_SCENARIO_ID)
+        demo_scenario = _merge_demo_scenario(stored_scenario)
+        session_store.save_scenario(DEMO_SCENARIO_ID, demo_scenario)
+        return demo_scenario
+
+    scenario = session_store.get_scenario(scenario_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    return scenario
+
+
 @router.post("/generate_synthetic_client", response_model=GenerateClientResponse)
 def generate_synthetic_client(request: GenerateClientRequest):
     """Generate a fictional client world and pre-planned objections."""
@@ -125,19 +139,19 @@ def generate_synthetic_client(request: GenerateClientRequest):
 @router.get("/load_demo_scenario", response_model=GenerateClientResponse)
 def load_demo_scenario():
     """Return a pre-configured SmartWings demo scenario."""
-    stored_scenario = session_store.get_scenario("demo-smartwings-123")
-    demo_scenario = _merge_demo_scenario(stored_scenario)
+    return _load_scenario_record(DEMO_SCENARIO_ID)
 
-    session_store.save_scenario(demo_scenario["scenario_id"], demo_scenario)
-    return demo_scenario
+
+@router.get("/scenarios/{scenario_id}", response_model=GenerateClientResponse)
+def load_scenario(scenario_id: str):
+    """Return a stored scenario so frontend flows can hydrate from one shared DB-backed path."""
+    return _load_scenario_record(scenario_id)
 
 
 @router.get("/scenarios/{scenario_id}/client_research", response_model=ClientResearchResponse)
 def get_client_research(scenario_id: str):
     """Return the currently saved Perplexity company research for a scenario."""
-    scenario = session_store.get_scenario(scenario_id)
-    if not scenario:
-        raise HTTPException(status_code=404, detail="Scenario not found")
+    scenario = _load_scenario_record(scenario_id)
 
     return {
         "scenario_id": scenario_id,
@@ -148,9 +162,7 @@ def get_client_research(scenario_id: str):
 @router.post("/scenarios/{scenario_id}/client_research", response_model=ClientResearchResponse)
 def refresh_client_research(scenario_id: str):
     """Request fresh Perplexity company research and persist it on the scenario."""
-    scenario = session_store.get_scenario(scenario_id)
-    if not scenario:
-        raise HTTPException(status_code=404, detail="Scenario not found")
+    scenario = _load_scenario_record(scenario_id)
 
     try:
         updated_scenario = scenario_builder.refresh_client_research_for_scenario(scenario)
@@ -169,7 +181,4 @@ def refresh_client_research(scenario_id: str):
 
 
 def get_scenario(scenario_id: str) -> dict:
-    scenario = session_store.get_scenario(scenario_id)
-    if not scenario:
-        raise HTTPException(status_code=404, detail="Scenario not found")
-    return scenario
+    return _load_scenario_record(scenario_id)

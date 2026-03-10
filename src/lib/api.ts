@@ -44,7 +44,46 @@ function mapClientResearch(data: any): ClientResearch | null {
     };
 }
 
+function mapBriefingResponse(data: any): BriefingData & { scenario_id: string } {
+    return {
+        scenario_id: data.scenario_id,
+        clientProfile: {
+            name: data.client_profile.name,
+            size: data.client_profile.size,
+            budgetCycle: data.client_profile.budget_cycle,
+            decisionTimeline: data.client_profile.decision_timeline,
+            buyerPersona: data.client_profile.buyer_persona,
+        },
+        clientResearch: mapClientResearch(data.client_research),
+        valueProposition: data.value_proposition,
+        buyingConstraints: data.buying_constraints,
+        objections: data.objections.map((o: any) => ({
+            id: o.id,
+            title: o.title,
+            detail: o.detail,
+            tested: o.tested,
+        })),
+    };
+}
+
 export const api = {
+    async loadScenario(scenarioId: string): Promise<BriefingData & { scenario_id: string }> {
+        const res = await fetch(`${API_BASE}/scenarios/${encodeURIComponent(scenarioId)}`);
+
+        if (!res.ok) {
+            let detail: any = null;
+            try {
+                detail = (await res.json()).detail;
+            } catch {
+                detail = null;
+            }
+            throw new Error(getErrorMessage(`API error: ${res.statusText}`, detail));
+        }
+
+        const data = await res.json();
+        return mapBriefingResponse(data);
+    },
+
     /** Generate a new synthetic client scenario */
     async generateClient(clientName: string, sector: string, requirements: string): Promise<BriefingData & { scenario_id: string }> {
         const res = await fetch(`${API_BASE}/generate_synthetic_client`, {
@@ -58,25 +97,7 @@ export const api = {
         }
 
         const data = await res.json();
-        return {
-            scenario_id: data.scenario_id,
-            clientProfile: {
-                name: data.client_profile.name,
-                size: data.client_profile.size,
-                budgetCycle: data.client_profile.budget_cycle,
-                decisionTimeline: data.client_profile.decision_timeline,
-                buyerPersona: data.client_profile.buyer_persona,
-            },
-            clientResearch: mapClientResearch(data.client_research),
-            valueProposition: data.value_proposition,
-            buyingConstraints: data.buying_constraints,
-            objections: data.objections.map((o: any) => ({
-                id: o.id,
-                title: o.title,
-                detail: o.detail,
-                tested: o.tested,
-            })),
-        };
+        return await this.loadScenario(data.scenario_id);
     },
 
     /** Load the hardcoded SmartWings demo scenario */
@@ -90,25 +111,7 @@ export const api = {
         }
 
         const data = await res.json();
-        return {
-            scenario_id: data.scenario_id,
-            clientProfile: {
-                name: data.client_profile.name,
-                size: data.client_profile.size,
-                budgetCycle: data.client_profile.budget_cycle,
-                decisionTimeline: data.client_profile.decision_timeline,
-                buyerPersona: data.client_profile.buyer_persona,
-            },
-            clientResearch: mapClientResearch(data.client_research),
-            valueProposition: data.value_proposition,
-            buyingConstraints: data.buying_constraints,
-            objections: data.objections.map((o: any) => ({
-                id: o.id,
-                title: o.title,
-                detail: o.detail,
-                tested: o.tested,
-            })),
-        };
+        return await this.loadScenario(data.scenario_id);
     },
 
     async getClientResearch(scenarioId: string): Promise<ClientResearch | null> {

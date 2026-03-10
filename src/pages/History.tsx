@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Lightbulb,
   Loader2,
   MessageSquare,
   TrendingDown,
@@ -23,6 +24,13 @@ function scoreColor(score: number | null): string {
   if (score >= 75) return "text-success";
   if (score >= 50) return "text-warning";
   return "text-destructive";
+}
+
+function scoreBarColor(score: number | null): string {
+  if (score === null) return "bg-muted-foreground/40";
+  if (score >= 75) return "bg-success";
+  if (score >= 50) return "bg-warning";
+  return "bg-destructive";
 }
 
 function scoreBadgeVariant(score: number | null): "default" | "secondary" | "destructive" | "outline" {
@@ -190,7 +198,11 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
                 {value ?? "—"}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">{label}</p>
-              <Progress value={value ?? 0} className="mt-2 h-1 rounded-full" />
+              <Progress
+                value={value ?? 0}
+                className="mt-2 h-1 rounded-full"
+                indicatorClassName={scoreBarColor(value)}
+              />
             </CardContent>
           </Card>
         ))}
@@ -220,6 +232,27 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
         </Card>
       )}
 
+      {/* AI Advice */}
+      <Card className="glass-card">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Lightbulb className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Coach's Advice
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {detail.weaknesses.length > 0
+              ? `Before your next session, focus on these areas: ${detail.weaknesses.slice(0, 2).join("; ")}. Practice having concrete data points ready — specific numbers, case studies, and prepared answers for anticipated objections will transform your credibility. Consider role-playing the toughest questions with a colleague before going live.`
+              : "Great job on this session! Continue building on your strengths and keep practicing with increasingly challenging scenarios to refine your technique."}
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Transcript */}
       <TranscriptAccordion transcript={detail.transcript} />
     </div>
@@ -234,8 +267,9 @@ export default function History() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activatingProjectId, setActivatingProjectId] = useState<string | null>(null);
 
-  const { contextSetup, activateProject } = useAppStore();
+  const { contextSetup, activateProject, setBriefing } = useAppStore();
   const activeProjectId = contextSetup.scenarioId;
 
   useEffect(() => {
@@ -303,13 +337,31 @@ export default function History() {
                     </Badge>
                   ) : (
                     <button
-                      onClick={() => {
-                        activateProject(pid, { clientName: groupedSessions[pid].label });
-                        navigate("/arena");
+                      onClick={async () => {
+                        setActivatingProjectId(pid);
+                        setLoadError(null);
+
+                        try {
+                          const briefingData = await api.loadScenario(pid);
+                          const { scenario_id, ...pureBriefing } = briefingData;
+
+                          activateProject(scenario_id, {
+                            mode: "synthetic",
+                            clientName: briefingData.clientProfile.name || groupedSessions[pid].label,
+                          });
+                          setBriefing(pureBriefing);
+                          navigate("/arena");
+                        } catch (error) {
+                          console.error(error);
+                          setLoadError(error instanceof Error ? error.message : "Failed to activate scenario.");
+                        } finally {
+                          setActivatingProjectId(null);
+                        }
                       }}
+                      disabled={activatingProjectId === pid}
                       className="text-[10px] text-primary hover:underline font-medium"
                     >
-                      Set Active
+                      {activatingProjectId === pid ? "Loading..." : "Set Active"}
                     </button>
                   )}
                 </div>
