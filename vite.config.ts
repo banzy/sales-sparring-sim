@@ -8,17 +8,25 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load backend .env so proxy uses same PORT.
 function loadBackendPort(): number {
-  if (process.env.PORT) return parseInt(process.env.PORT, 10);
+  const explicitPort =
+    process.env.VITE_BACKEND_PORT ||
+    process.env.BACKEND_PORT ||
+    process.env.PORT;
+  if (explicitPort && !Number.isNaN(parseInt(explicitPort, 10))) {
+    return parseInt(explicitPort, 10);
+  }
+
   try {
     const envPath = path.resolve(__dirname, "backend/.env");
     const env = readFileSync(envPath, "utf-8");
-    const match = env.match(/^PORT=(.+)$/m);
-    return match ? parseInt(match[1].trim(), 10) : 8000;
+    const match = env.match(/^\s*PORT\s*=\s*(.+)\s*$/m);
+    return match ? parseInt(match[1].trim(), 10) : 8090;
   } catch {
-    return 8000;
+    return 8090;
   }
 }
 const backendPort = loadBackendPort();
+console.log(`[vite] API proxy target: http://127.0.0.1:${backendPort}`);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({

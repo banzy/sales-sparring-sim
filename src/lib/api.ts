@@ -17,7 +17,7 @@ export interface SessionDetail extends SessionSummary {
     transcript: Array<{ role: string; content: string }>;
 }
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") || "/api";
 
 export const api = {
     /** Generate a new synthetic client scenario */

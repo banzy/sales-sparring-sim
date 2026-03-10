@@ -38,7 +38,7 @@ Start the development server with auto-reload:
 python -m app.main
 ```
 
-By default the API runs on `http://localhost:8000` (or `PORT` from `.env`).
+By default the API runs on `http://localhost:8090` (or `PORT` from `.env`).
 You can access the interactive API documentation at `http://localhost:<PORT>/docs`.
 
 ## Scripts
