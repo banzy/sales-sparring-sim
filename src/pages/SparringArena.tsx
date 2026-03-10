@@ -162,13 +162,18 @@ export default function SparringArena() {
       console.error(error);
       if (!cancelled) {
         setPastSessions([]);
+        toast({
+          variant: "destructive",
+          title: "Failed to load past sessions",
+          description: error instanceof Error ? error.message : "Unexpected error",
+        });
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [scenarioId]);
+  }, [scenarioId, toast]);
 
   useEffect(() => {
     if (!selectedPastSessionId) {

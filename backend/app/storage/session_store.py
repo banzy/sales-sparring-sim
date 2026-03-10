@@ -504,3 +504,24 @@ def get_scenario(scenario_id: str) -> dict | None:
         return json.loads(scenario.scenario_json)
     finally:
         db.close()
+
+
+def get_db_diagnostics() -> dict:
+    """Return active DB URL/path and key table counts for debugging."""
+    engine = _engine()
+    diagnostics = {
+        "database_url": str(engine.url),
+        "database_path": engine.url.database if engine.url.drivername.startswith("sqlite") else None,
+        "counts": {},
+    }
+
+    with engine.connect() as conn:
+        for table in ("sessions", "session_scores", "sparring_profiles", "scenarios"):
+            try:
+                count = conn.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar_one()
+            except Exception as exc:
+                diagnostics["counts"][table] = f"error: {exc}"
+            else:
+                diagnostics["counts"][table] = count
+
+    return diagnostics

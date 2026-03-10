@@ -232,16 +232,21 @@ export default function History() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { contextSetup, activateProject } = useAppStore();
   const activeProjectId = contextSetup.scenarioId;
 
   useEffect(() => {
+    setLoadError(null);
     api.listSessions().then(list => {
       setSessions(list);
       if (list.length > 0) setSelectedId(list[0].id);
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((error) => {
+      console.error(error);
+      setLoadError(error instanceof Error ? error.message : "Failed to load sessions.");
+    }).finally(() => setLoading(false));
   }, []);
 
   // Group sessions by project id
@@ -278,6 +283,11 @@ export default function History() {
             {!loading && sessions.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-10 px-4">
                 No sessions yet. Complete a sparring session to see history here.
+              </p>
+            )}
+            {!loading && loadError && (
+              <p className="text-xs text-destructive text-center py-2 px-4">
+                History request failed: {loadError}
               </p>
             )}
 
