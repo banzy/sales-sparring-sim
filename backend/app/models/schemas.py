@@ -53,7 +53,7 @@ class GenerateClientResponse(BaseModel):
 
 class SparringChatRequest(BaseModel):
     scenario_id: str
-    user_id: str = "anonymous"
+    project_id: str
     conversation_history: list[ChatMessage] = []
     user_reply: str
 
@@ -80,7 +80,7 @@ class SparringChatResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class EvaluateSessionRequest(BaseModel):
-    user_id: str = "anonymous"
+    project_id: str
     scenario_id: str
     transcript: list[ChatMessage]
 

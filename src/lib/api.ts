@@ -3,7 +3,9 @@ import type { BriefingData, Message, PerformanceData, SparringSession } from '..
 
 export interface SessionSummary {
     id: string;
+    project_id?: string | null;
     scenario_id: string;
+    scenario_name?: string | null;
     created_at: string | null;
     overall_score: number | null;
     objection_handling: number | null;
@@ -93,7 +95,7 @@ export const api = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 scenario_id: scenarioId,
-                user_id: "demo",
+                project_id: scenarioId,
                 conversation_history: history.filter(m => m.role === "buyer" || m.role === "seller"),
                 user_reply: userReply,
             }),
@@ -113,7 +115,7 @@ export const api = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 scenario_id: scenarioId,
-                user_id: "demo",
+                project_id: scenarioId,
                 transcript: transcript.map(m => ({ role: m.role, content: m.content })),
             }),
         });
@@ -137,8 +139,9 @@ export const api = {
     },
 
     /** List all past sessions for the default user */
-    async listSessions(): Promise<SessionSummary[]> {
-        const res = await fetch(`${API_BASE}/sessions`);
+    async listSessions(projectId?: string): Promise<SessionSummary[]> {
+        const search = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+        const res = await fetch(`${API_BASE}/sessions${search}`);
         if (!res.ok) throw new Error(`API error: ${res.statusText}`);
         const data = await res.json();
         return data.sessions as SessionSummary[];

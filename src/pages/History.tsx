@@ -43,6 +43,25 @@ function shortId(id: string): string {
   return id.length > 8 ? id.slice(0, 8).toUpperCase() : id.toUpperCase();
 }
 
+function formatScenarioIdFallback(scenarioId: string): string {
+  if (scenarioId === "demo-smartwings-123") {
+    return "SmartWings";
+  }
+
+  const normalized = scenarioId
+    .replace(/^demo-/, "")
+    .replace(/^scenario_/, "")
+    .replace(/[-_][a-f0-9]{8}$/i, "")
+    .replace(/[-_]+/g, " ")
+    .trim();
+
+  if (!normalized) {
+    return scenarioId;
+  }
+
+  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 // ─── Session List Item ──────────────────────────────────────────────────────
 
 function SessionCard({
@@ -215,7 +234,7 @@ export default function History() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { contextSetup, setContextSetup } = useAppStore();
+  const { contextSetup, activateProject } = useAppStore();
   const activeProjectId = contextSetup.scenarioId;
 
   useEffect(() => {
@@ -228,10 +247,15 @@ export default function History() {
   // Group sessions by project id
   const groupedSessions = sessions.reduce((acc, curr) => {
     const pid = curr.scenario_id || "Unknown Project";
-    if (!acc[pid]) acc[pid] = [];
-    acc[pid].push(curr);
+    if (!acc[pid]) {
+      acc[pid] = {
+        label: curr.scenario_name || formatScenarioIdFallback(pid),
+        sessions: [],
+      };
+    }
+    acc[pid].sessions.push(curr);
     return acc;
-  }, {} as Record<string, SessionSummary[]>);
+  }, {} as Record<string, { label: string; sessions: SessionSummary[] }>);
 
   const projectIds = Object.keys(groupedSessions);
 
@@ -261,16 +285,16 @@ export default function History() {
               <div key={pid} className="mb-4">
                 <div className="flex items-center justify-between px-2 py-2 mb-1">
                   <span className="uppercase tracking-wider w-36 truncate" style={{ color: 'rgba(108, 111, 117, 1)', fontWeight: 800, fontSize: '13px' }}>
-                    {pid.includes("-") ? pid.split("-").pop()?.replace("scenario_", "") : pid.replace("scenario_", "")}
+                    {groupedSessions[pid].label}
                   </span>
                   {activeProjectId === pid ? (
-                    <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4 uppercase tracking-widest bg-success">
+                    <Badge variant="success" className="text-[9px] px-1.5 py-0 h-4 uppercase tracking-widest">
                       Active
                     </Badge>
                   ) : (
                     <button
                       onClick={() => {
-                        setContextSetup({ scenarioId: pid });
+                        activateProject(pid, { clientName: groupedSessions[pid].label });
                         navigate("/arena");
                       }}
                       className="text-[10px] text-primary hover:underline font-medium"
@@ -280,7 +304,7 @@ export default function History() {
                   )}
                 </div>
                 <div className="space-y-0.5">
-                  {groupedSessions[pid].map(s => (
+                  {groupedSessions[pid].sessions.map(s => (
                     <SessionCard
                       key={s.id}
                       session={s}

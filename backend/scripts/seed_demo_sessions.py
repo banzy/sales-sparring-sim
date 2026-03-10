@@ -2,7 +2,7 @@
 seed_demo_sessions.py
 =====================
 Populates SQLite + Qdrant with 3 realistic SmartWings pitch sessions
-for user_id = "demo".
+for project_id = "demo-smartwings-123".
 
 Sessions 1 & 2 are completed (saved with scores).
 Session 3 is the live "current" session — the profile and history are already
@@ -35,11 +35,10 @@ from app.storage.session_store import (
 from app.core.llm_client import LLMClient
 from app.storage.vector_store import ensure_collection, index_chunks
 
-USER_ID = "demo"
-
 # ── Scenario ──────────────────────────────────────────────────────────────────
 
 SCENARIO_ID = "demo-smartwings-123"
+PROJECT_ID = SCENARIO_ID
 SCENARIO = {
     "scenario_id": SCENARIO_ID,
     "client_profile": {
@@ -408,7 +407,7 @@ SESSION_MEMORY_TEXTS = [
             "type": "session_memory",
             "session_id": SESSION_1_ID,
             "session_number": 1,
-            "user_id": USER_ID,
+            "project_id": PROJECT_ID,
             "score": 48,
             "label": "vague_roi_integration_deflection",
         },
@@ -425,7 +424,7 @@ SESSION_MEMORY_TEXTS = [
             "type": "session_memory",
             "session_id": SESSION_1_ID,
             "session_number": 1,
-            "user_id": USER_ID,
+            "project_id": PROJECT_ID,
             "score": 48,
             "label": "coaching_advice_s1",
         },
@@ -443,7 +442,7 @@ SESSION_MEMORY_TEXTS = [
             "type": "session_memory",
             "session_id": SESSION_2_ID,
             "session_number": 2,
-            "user_id": USER_ID,
+            "project_id": PROJECT_ID,
             "score": 67,
             "label": "improved_integration_answer",
         },
@@ -460,7 +459,7 @@ SESSION_MEMORY_TEXTS = [
             "type": "session_memory",
             "session_id": SESSION_2_ID,
             "session_number": 2,
-            "user_id": USER_ID,
+            "project_id": PROJECT_ID,
             "score": 67,
             "label": "roi_calculation",
         },
@@ -478,7 +477,7 @@ SESSION_MEMORY_TEXTS = [
             "type": "session_memory",
             "session_id": SESSION_2_ID,
             "session_number": 2,
-            "user_id": USER_ID,
+            "project_id": PROJECT_ID,
             "score": 67,
             "label": "weakness_data_privacy",
         },
@@ -495,7 +494,7 @@ SESSION_MEMORY_TEXTS = [
             "type": "session_memory",
             "session_id": SESSION_2_ID,
             "session_number": 2,
-            "user_id": USER_ID,
+            "project_id": PROJECT_ID,
             "score": 67,
             "label": "coaching_advice_s2",
         },
@@ -510,7 +509,7 @@ def _session_exists(db, session_id: str) -> bool:
 
 
 def _profile_exists(db) -> bool:
-    return db.query(SparringProfile).filter_by(user_id=USER_ID).first() is not None
+    return db.query(SparringProfile).filter_by(project_id=PROJECT_ID).first() is not None
 
 
 def _insert_session(db, session_id: str, transcript: list[dict], score: dict,
@@ -519,7 +518,7 @@ def _insert_session(db, session_id: str, transcript: list[dict], score: dict,
 
     session_record = Session(
         id=session_id,
-        user_id=USER_ID,
+        project_id=PROJECT_ID,
         scenario_id=SCENARIO_ID,
         transcript_json=json.dumps(transcript),
         created_at=ts,
@@ -528,7 +527,7 @@ def _insert_session(db, session_id: str, transcript: list[dict], score: dict,
 
     score_record = SessionScore(
         session_id=session_id,
-        user_id=USER_ID,
+        project_id=PROJECT_ID,
         overall_score=score["overall_score"],
         objection_handling=score["objection_handling"],
         communication_clarity=score["communication_clarity"],
@@ -540,9 +539,9 @@ def _insert_session(db, session_id: str, transcript: list[dict], score: dict,
 
 
 def _upsert_profile(db) -> None:
-    profile = db.query(SparringProfile).filter_by(user_id=USER_ID).first()
+    profile = db.query(SparringProfile).filter_by(project_id=PROJECT_ID).first()
     if not profile:
-        profile = SparringProfile(user_id=USER_ID)
+        profile = SparringProfile(project_id=PROJECT_ID)
         db.add(profile)
 
     profile.current_level = "intermediate"
@@ -557,7 +556,7 @@ def _upsert_profile(db) -> None:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    print("🌱  Seeding demo session data for SmartWings / user='demo' …\n")
+    print(f"🌱  Seeding demo session data for SmartWings / project='{PROJECT_ID}' …\n")
 
     # 1. Init DB tables
     init_db()
@@ -589,7 +588,7 @@ def main():
 
         # 4. Upsert sparring profile
         _upsert_profile(db)
-        print(f"✅  SparringProfile for '{USER_ID}' set: "
+        print(f"✅  SparringProfile for '{PROJECT_ID}' set: "
               f"sessions_count=2, level=intermediate.")
     finally:
         db.close()

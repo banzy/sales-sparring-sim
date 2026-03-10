@@ -130,6 +130,41 @@ const defaultPersona = {
   description: 'Risk-averse, data-driven, 15+ years in finance',
 };
 
+function normalizeConstraint(constraint: string): string {
+  return constraint.trim().replace(/\.+$/, '');
+}
+
+function buildScenarioPersona(briefing: BriefingData): SparringSession['currentPersona'] {
+  const persona = briefing.clientProfile.buyerPersona?.trim();
+  if (!persona) {
+    return { ...defaultPersona };
+  }
+
+  return {
+    name: persona,
+    description: `${briefing.clientProfile.name} stakeholder focused on risk, implementation credibility, and measurable ROI.`,
+  };
+}
+
+function buildScenarioOpeningMessage(briefing: BriefingData): Message {
+  const clientName = briefing.clientProfile.name?.trim() || 'our team';
+  const constraints = briefing.buyingConstraints
+    .slice(0, 3)
+    .map(normalizeConstraint)
+    .filter(Boolean);
+
+  const content = constraints.length > 0
+    ? `Thanks for joining. At ${clientName}, I need clarity on ${constraints.join(', ')}. Why should we take this seriously now?`
+    : `Thanks for joining. Give me the clearest case for why ${clientName} should take this seriously now.`;
+
+  return {
+    id: 1,
+    role: 'buyer',
+    content,
+    timestamp: Date.now(),
+  };
+}
+
 function cloneMessage(message: Message): Message {
   return { ...message };
 }
@@ -161,23 +196,20 @@ function cloneBriefing(briefing: BriefingData): BriefingData {
   };
 }
 
-function createDefaultMessages(): Message[] {
-  const timestamp = Date.now();
+function createDefaultSparringSession(
+  briefing: BriefingData = defaultBriefing,
+  contextSetup: ContextSetupData = defaultContextSetup,
+): SparringSession {
+  const resolvedBriefing = briefing.clientProfile.name || contextSetup.clientName
+    ? briefing
+    : defaultBriefing;
 
-  return [
-    { id: 1, role: 'buyer', content: 'Thanks for making the time. I\'ll be honest — we\'ve been burned by vendors before, so I need to see real proof before I bring anything to the board.', timestamp },
-    { id: 2, role: 'seller', content: 'Absolutely, I appreciate the candor. That\'s actually one of the reasons I wanted to start with a case study from a company very similar to yours in the manufacturing space.', timestamp },
-    { id: 3, role: 'buyer', content: 'Fine, but let\'s cut to the chase — what\'s this going to cost us? We\'re in the middle of a cost-reduction initiative.', timestamp },
-  ];
-}
-
-function createDefaultSparringSession(briefing: BriefingData = defaultBriefing): SparringSession {
   return {
     isActive: false,
-    messages: createDefaultMessages(),
-    currentPersona: { ...defaultPersona },
+    messages: [buildScenarioOpeningMessage(resolvedBriefing)],
+    currentPersona: buildScenarioPersona(resolvedBriefing),
     difficulty: 'intermediate',
-    objectionChecklist: briefing.objections.map(cloneObjection),
+    objectionChecklist: resolvedBriefing.objections.map(cloneObjection),
     sessionStats: {
       duration: 0,
       exchanges: 0,
@@ -265,11 +297,13 @@ function applyProjectState(
 ): AppState {
   const snapshot = state.projectStates[scenarioId];
   const briefing = snapshot ? cloneBriefing(snapshot.briefing) : cloneBriefing(defaultBriefing);
-  const sparringSession = snapshot ? cloneSparringSession(snapshot.sparringSession) : createDefaultSparringSession(briefing);
-  const performance = snapshot ? clonePerformance(snapshot.performance) : createDefaultPerformance();
   const contextSetup = snapshot
     ? { ...cloneContextSetup(snapshot.contextSetup), ...contextOverrides, scenarioId }
     : { ...cloneContextSetup(defaultContextSetup), ...contextOverrides, scenarioId };
+  const sparringSession = snapshot
+    ? cloneSparringSession(snapshot.sparringSession)
+    : createDefaultSparringSession(briefing, contextSetup);
+  const performance = snapshot ? clonePerformance(snapshot.performance) : createDefaultPerformance();
 
   return syncActiveProjectState({
     ...state,
@@ -282,11 +316,12 @@ function applyProjectState(
 
 function createInitialSlices() {
   const briefing = cloneBriefing(defaultBriefing);
+  const contextSetup = cloneContextSetup(defaultContextSetup);
 
   return {
-    contextSetup: cloneContextSetup(defaultContextSetup),
+    contextSetup,
     briefing,
-    sparringSession: createDefaultSparringSession(briefing),
+    sparringSession: createDefaultSparringSession(briefing, contextSetup),
     performance: createDefaultPerformance(),
     projectStates: {} as Record<string, ProjectStateSnapshot>,
   };
@@ -315,12 +350,17 @@ export const useAppStore = create<AppState>()(
         setBriefing: (data) =>
           set((state) => {
             const briefing = mergeBriefing(state.briefing, data);
+            const shouldReplaceSeedTranscript = state.sparringSession.sessionStats.exchanges === 0;
 
             return syncActiveProjectState({
               ...state,
               briefing,
               sparringSession: {
                 ...state.sparringSession,
+                currentPersona: buildScenarioPersona(briefing),
+                messages: shouldReplaceSeedTranscript
+                  ? [buildScenarioOpeningMessage(briefing)]
+                  : state.sparringSession.messages.map(cloneMessage),
                 objectionChecklist: briefing.objections.map(cloneObjection),
               },
             });

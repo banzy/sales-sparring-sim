@@ -13,14 +13,14 @@ logger = logging.getLogger(__name__)
 
 @router.post("/evaluate_session", response_model=EvaluateSessionResponse)
 def evaluate_session(request: EvaluateSessionRequest):
-    """Score the full transcript and update the user's difficulty profile."""
+    """Score the full transcript and update the project's difficulty profile."""
     try:
         scenario = get_scenario(request.scenario_id)
         transcript = [{"role": msg.role, "content": msg.content} for msg in request.transcript]
         
-        # 1. Retrieve user history & run LLM judge
-        user_profile = session_store.get_user_profile(request.user_id)
-        eval_result = evaluation_engine.score_session(scenario, transcript, user_profile)
+        # 1. Retrieve project history & run LLM judge
+        project_profile = session_store.get_project_profile(request.project_id)
+        eval_result = evaluation_engine.score_session(scenario, transcript, project_profile)
         
         # 2. Extract metrics
         overall_score = eval_result.get("overall_score", 0)
@@ -30,19 +30,19 @@ def evaluate_session(request: EvaluateSessionRequest):
         # 3. Save to database
         session_store.save_session(
             session_id=session_id,
-            user_id=request.user_id,
+            project_id=request.project_id,
             scenario_id=request.scenario_id,
             transcript=transcript,
         )
         
         session_store.save_score(
             session_id=session_id,
-            user_id=request.user_id,
+            project_id=request.project_id,
             score_data=eval_result,
         )
         
         # 4. Update adaptive profile
-        new_profile = session_store.update_user_profile(request.user_id, eval_result)
+        new_profile = session_store.update_project_profile(request.project_id, eval_result)
         eval_result["next_difficulty"] = new_profile["current_level"]
         
         return eval_result

@@ -1,17 +1,21 @@
 """SQLite-backed session and performance memory using SQLAlchemy."""
 from __future__ import annotations
+
 import json
 from datetime import datetime
+
 from sqlalchemy import (
-    create_engine,
     Column,
-    String,
-    Integer,
-    Float,
-    Text,
     DateTime,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    text,
 )
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
 from app.config import get_settings
 
 
@@ -21,28 +25,31 @@ class Base(DeclarativeBase):
 
 class Session(Base):
     __tablename__ = "sessions"
+
     id = Column(String, primary_key=True)
-    user_id = Column(String, index=True)
-    scenario_id = Column(String)
+    project_id = Column(String, index=True)
+    scenario_id = Column(String, index=True)
     transcript_json = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class SessionScore(Base):
     __tablename__ = "session_scores"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(String, index=True)
-    user_id = Column(String, index=True)
+    project_id = Column(String, index=True)
     overall_score = Column(Integer)
     objection_handling = Column(Integer)
     communication_clarity = Column(Integer)
-    weaknesses_json = Column(Text)  # JSON list of weakness tags
+    weaknesses_json = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class SparringProfile(Base):
     __tablename__ = "sparring_profiles"
-    user_id = Column(String, primary_key=True)
+
+    project_id = Column(String, primary_key=True)
     current_level = Column(String, default="intermediate")
     priority_weaknesses_json = Column(Text, default="[]")
     sessions_count = Column(Integer, default=0)
@@ -51,34 +58,247 @@ class SparringProfile(Base):
 
 class Scenario(Base):
     __tablename__ = "scenarios"
+
     scenario_id = Column(String, primary_key=True)
     scenario_json = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-def _engine():
+def _engine() -> Engine:
     settings = get_settings()
     return create_engine(settings.database_url, connect_args={"check_same_thread": False})
 
 
+def _table_columns(conn, table_name: str) -> set[str]:
+    rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+    return {row[1] for row in rows}
+
+
+def _ensure_project_id_columns(engine: Engine) -> None:
+    with engine.begin() as conn:
+        session_columns = _table_columns(conn, "sessions")
+        if "project_id" not in session_columns and "user_id" in session_columns:
+            conn.execute(text("ALTER TABLE sessions RENAME COLUMN user_id TO project_id"))
+            session_columns = _table_columns(conn, "sessions")
+        if "project_id" not in session_columns:
+            conn.execute(text("ALTER TABLE sessions ADD COLUMN project_id VARCHAR"))
+            session_columns = _table_columns(conn, "sessions")
+
+        score_columns = _table_columns(conn, "session_scores")
+        if "project_id" not in score_columns and "user_id" in score_columns:
+            conn.execute(text("ALTER TABLE session_scores RENAME COLUMN user_id TO project_id"))
+            score_columns = _table_columns(conn, "session_scores")
+        if "project_id" not in score_columns:
+            conn.execute(text("ALTER TABLE session_scores ADD COLUMN project_id VARCHAR"))
+            score_columns = _table_columns(conn, "session_scores")
+
+        profile_columns = _table_columns(conn, "sparring_profiles")
+        if "project_id" not in profile_columns and "user_id" in profile_columns:
+            conn.execute(text("ALTER TABLE sparring_profiles RENAME COLUMN user_id TO project_id"))
+            profile_columns = _table_columns(conn, "sparring_profiles")
+        if "project_id" not in profile_columns:
+            conn.execute(text("ALTER TABLE sparring_profiles ADD COLUMN project_id VARCHAR"))
+            profile_columns = _table_columns(conn, "sparring_profiles")
+
+        conn.execute(
+            text(
+                """
+                UPDATE sparring_profiles
+                SET project_id = COALESCE(
+                    (
+                        SELECT NULLIF(s.scenario_id, '')
+                        FROM sessions s
+                        WHERE s.project_id = sparring_profiles.project_id
+                        ORDER BY s.created_at DESC
+                        LIMIT 1
+                    ),
+                    NULLIF(project_id, '')
+                )
+                WHERE project_id IS NULL OR project_id = '' OR project_id NOT LIKE 'scenario_%' AND project_id NOT LIKE 'demo-%'
+                """
+            )
+        )
+
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_project_id ON sessions(project_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_scenario_id ON sessions(scenario_id)"))
+
+        conn.execute(
+            text(
+                """
+                UPDATE sessions
+                SET project_id = COALESCE(NULLIF(scenario_id, ''), NULLIF(project_id, ''))
+                WHERE scenario_id IS NOT NULL AND scenario_id != ''
+                """
+            )
+        )
+
+        conn.execute(
+            text(
+                """
+                UPDATE session_scores
+                SET project_id = COALESCE(
+                    NULLIF((SELECT s.project_id FROM sessions s WHERE s.id = session_scores.session_id), ''),
+                    NULLIF((SELECT s.scenario_id FROM sessions s WHERE s.id = session_scores.session_id), ''),
+                    NULLIF(project_id, '')
+                )
+                WHERE project_id IS NULL OR project_id = '' OR project_id = 'demo'
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_session_scores_project_id ON session_scores(project_id)"))
+
+        conn.execute(
+            text(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS ux_sparring_profiles_project_id
+                ON sparring_profiles(project_id)
+                """
+            )
+        )
+
+        session_columns = _table_columns(conn, "sessions")
+        if "user_id" in session_columns and "project_id" in session_columns:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE sessions__new (
+                        id VARCHAR PRIMARY KEY,
+                        project_id VARCHAR,
+                        scenario_id VARCHAR,
+                        transcript_json TEXT,
+                        created_at DATETIME
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO sessions__new (id, project_id, scenario_id, transcript_json, created_at)
+                    SELECT
+                        id,
+                        COALESCE(NULLIF(project_id, ''), NULLIF(scenario_id, ''), NULLIF(user_id, '')),
+                        scenario_id,
+                        transcript_json,
+                        created_at
+                    FROM sessions
+                    """
+                )
+            )
+            conn.execute(text("DROP TABLE sessions"))
+            conn.execute(text("ALTER TABLE sessions__new RENAME TO sessions"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_project_id ON sessions(project_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_scenario_id ON sessions(scenario_id)"))
+
+        score_columns = _table_columns(conn, "session_scores")
+        if "user_id" in score_columns and "project_id" in score_columns:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE session_scores__new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        session_id VARCHAR,
+                        project_id VARCHAR,
+                        overall_score INTEGER,
+                        objection_handling INTEGER,
+                        communication_clarity INTEGER,
+                        weaknesses_json TEXT,
+                        created_at DATETIME
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO session_scores__new (
+                        id,
+                        session_id,
+                        project_id,
+                        overall_score,
+                        objection_handling,
+                        communication_clarity,
+                        weaknesses_json,
+                        created_at
+                    )
+                    SELECT
+                        id,
+                        session_id,
+                        COALESCE(
+                            NULLIF(project_id, ''),
+                            NULLIF((SELECT s.project_id FROM sessions s WHERE s.id = session_scores.session_id), ''),
+                            NULLIF(user_id, '')
+                        ),
+                        overall_score,
+                        objection_handling,
+                        communication_clarity,
+                        weaknesses_json,
+                        created_at
+                    FROM session_scores
+                    """
+                )
+            )
+            conn.execute(text("DROP TABLE session_scores"))
+            conn.execute(text("ALTER TABLE session_scores__new RENAME TO session_scores"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_session_scores_project_id ON session_scores(project_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_session_scores_session_id ON session_scores(session_id)"))
+
+        profile_columns = _table_columns(conn, "sparring_profiles")
+        if "user_id" in profile_columns and "project_id" in profile_columns:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE sparring_profiles__new (
+                        project_id VARCHAR PRIMARY KEY,
+                        current_level VARCHAR,
+                        priority_weaknesses_json TEXT,
+                        sessions_count INTEGER,
+                        updated_at DATETIME
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT OR REPLACE INTO sparring_profiles__new (
+                        project_id,
+                        current_level,
+                        priority_weaknesses_json,
+                        sessions_count,
+                        updated_at
+                    )
+                    SELECT
+                        COALESCE(NULLIF(project_id, ''), NULLIF(user_id, '')),
+                        current_level,
+                        priority_weaknesses_json,
+                        sessions_count,
+                        updated_at
+                    FROM sparring_profiles
+                    WHERE COALESCE(NULLIF(project_id, ''), NULLIF(user_id, '')) IS NOT NULL
+                    """
+                )
+            )
+            conn.execute(text("DROP TABLE sparring_profiles"))
+            conn.execute(text("ALTER TABLE sparring_profiles__new RENAME TO sparring_profiles"))
+
+
 def init_db() -> None:
-    Base.metadata.create_all(bind=_engine())
+    engine = _engine()
+    Base.metadata.create_all(bind=engine)
+    _ensure_project_id_columns(engine)
 
 
 def _make_session():
     return sessionmaker(autocommit=False, autoflush=False, bind=_engine())()
 
 
-# ---------------------------------------------------------------------------
-# Public helpers
-# ---------------------------------------------------------------------------
-
-def save_session(session_id: str, user_id: str, scenario_id: str, transcript: list[dict]) -> None:
+def save_session(session_id: str, project_id: str, scenario_id: str, transcript: list[dict]) -> None:
     db = _make_session()
     try:
         record = Session(
             id=session_id,
-            user_id=user_id,
+            project_id=project_id,
             scenario_id=scenario_id,
             transcript_json=json.dumps(transcript),
         )
@@ -88,12 +308,12 @@ def save_session(session_id: str, user_id: str, scenario_id: str, transcript: li
         db.close()
 
 
-def save_score(session_id: str, user_id: str, score_data: dict) -> None:
+def save_score(session_id: str, project_id: str, score_data: dict) -> None:
     db = _make_session()
     try:
         record = SessionScore(
             session_id=session_id,
-            user_id=user_id,
+            project_id=project_id,
             overall_score=score_data.get("overall_score", 0),
             objection_handling=score_data.get("objection_handling", 0),
             communication_clarity=score_data.get("communication_clarity", 0),
@@ -105,19 +325,19 @@ def save_score(session_id: str, user_id: str, score_data: dict) -> None:
         db.close()
 
 
-def get_user_profile(user_id: str) -> dict:
+def get_project_profile(project_id: str) -> dict:
     db = _make_session()
     try:
-        profile = db.query(SparringProfile).filter_by(user_id=user_id).first()
+        profile = db.query(SparringProfile).filter_by(project_id=project_id).first()
         if not profile:
             return {
-                "user_id": user_id,
+                "project_id": project_id,
                 "current_level": "intermediate",
                 "priority_weaknesses": [],
                 "sessions_count": 0,
             }
         return {
-            "user_id": profile.user_id,
+            "project_id": profile.project_id,
             "current_level": profile.current_level,
             "priority_weaknesses": json.loads(profile.priority_weaknesses_json),
             "sessions_count": profile.sessions_count,
@@ -126,33 +346,60 @@ def get_user_profile(user_id: str) -> dict:
         db.close()
 
 
-def get_all_sessions(user_id: str) -> list[dict]:
-    """Return all sessions for a user, joined with their scores, newest first."""
+def _extract_scenario_name(scenario_json: str | None) -> str | None:
+    if not scenario_json:
+        return None
+
+    try:
+        data = json.loads(scenario_json)
+    except json.JSONDecodeError:
+        return None
+
+    client_profile = data.get("client_profile")
+    if isinstance(client_profile, dict):
+        name = client_profile.get("name")
+        if isinstance(name, str) and name.strip():
+            return name.strip()
+
+    return None
+
+
+def get_all_sessions(project_id: str | None = None) -> list[dict]:
+    """Return sessions, optionally filtered to a single project, newest first."""
     db = _make_session()
     try:
-        sessions = (
-            db.query(Session)
-            .filter_by(user_id=user_id)
-            .order_by(Session.created_at.desc())
-            .all()
-        )
+        query = db.query(Session)
+        if project_id:
+            query = query.filter_by(project_id=project_id)
+
+        sessions = query.order_by(Session.created_at.desc()).all()
+
+        scenario_names = {
+            scenario.scenario_id: _extract_scenario_name(scenario.scenario_json)
+            for scenario in db.query(Scenario).all()
+        }
+
         results = []
-        for s in sessions:
+        for session in sessions:
             score = (
                 db.query(SessionScore)
-                .filter_by(session_id=s.id)
+                .filter_by(session_id=session.id)
                 .order_by(SessionScore.created_at.desc())
                 .first()
             )
-            results.append({
-                "id": s.id,
-                "scenario_id": s.scenario_id,
-                "created_at": s.created_at.isoformat() if s.created_at else None,
-                "overall_score": score.overall_score if score else None,
-                "objection_handling": score.objection_handling if score else None,
-                "communication_clarity": score.communication_clarity if score else None,
-                "weaknesses": json.loads(score.weaknesses_json) if score and score.weaknesses_json else [],
-            })
+            results.append(
+                {
+                    "id": session.id,
+                    "project_id": session.project_id,
+                    "scenario_id": session.scenario_id,
+                    "scenario_name": scenario_names.get(session.scenario_id),
+                    "created_at": session.created_at.isoformat() if session.created_at else None,
+                    "overall_score": score.overall_score if score else None,
+                    "objection_handling": score.objection_handling if score else None,
+                    "communication_clarity": score.communication_clarity if score else None,
+                    "weaknesses": json.loads(score.weaknesses_json) if score and score.weaknesses_json else [],
+                }
+            )
         return results
     finally:
         db.close()
@@ -162,20 +409,24 @@ def get_session_detail(session_id: str) -> dict | None:
     """Return a single session with its transcript and score."""
     db = _make_session()
     try:
-        s = db.query(Session).filter_by(id=session_id).first()
-        if not s:
+        session = db.query(Session).filter_by(id=session_id).first()
+        if not session:
             return None
+
         score = (
             db.query(SessionScore)
             .filter_by(session_id=session_id)
             .order_by(SessionScore.created_at.desc())
             .first()
         )
+        scenario = db.query(Scenario).filter_by(scenario_id=session.scenario_id).first()
         return {
-            "id": s.id,
-            "scenario_id": s.scenario_id,
-            "created_at": s.created_at.isoformat() if s.created_at else None,
-            "transcript": json.loads(s.transcript_json) if s.transcript_json else [],
+            "id": session.id,
+            "project_id": session.project_id,
+            "scenario_id": session.scenario_id,
+            "scenario_name": _extract_scenario_name(scenario.scenario_json) if scenario else None,
+            "created_at": session.created_at.isoformat() if session.created_at else None,
+            "transcript": json.loads(session.transcript_json) if session.transcript_json else [],
             "overall_score": score.overall_score if score else None,
             "objection_handling": score.objection_handling if score else None,
             "communication_clarity": score.communication_clarity if score else None,
@@ -185,16 +436,15 @@ def get_session_detail(session_id: str) -> dict | None:
         db.close()
 
 
-def update_user_profile(user_id: str, score_data: dict) -> dict:
+def update_project_profile(project_id: str, score_data: dict) -> dict:
     """Escalate difficulty and track weaknesses after each session."""
     db = _make_session()
     try:
-        profile = db.query(SparringProfile).filter_by(user_id=user_id).first()
+        profile = db.query(SparringProfile).filter_by(project_id=project_id).first()
         if not profile:
-            profile = SparringProfile(user_id=user_id)
+            profile = SparringProfile(project_id=project_id)
             db.add(profile)
 
-        # Escalate difficulty if overall score is good
         overall = score_data.get("overall_score", 50)
         level_map = ["beginner", "intermediate", "advanced", "adversarial"]
         current_idx = level_map.index(profile.current_level) if profile.current_level in level_map else 1
@@ -203,13 +453,12 @@ def update_user_profile(user_id: str, score_data: dict) -> dict:
         elif overall < 50 and current_idx > 0:
             profile.current_level = level_map[current_idx - 1]
 
-        # Update weaknesses
         profile.priority_weaknesses_json = json.dumps(score_data.get("weaknesses", [])[:3])
         profile.sessions_count = (profile.sessions_count or 0) + 1
         profile.updated_at = datetime.utcnow()
         db.commit()
 
-        return get_user_profile(user_id)
+        return get_project_profile(project_id)
     finally:
         db.close()
 

@@ -16,7 +16,7 @@ export default function ContextSetup() {
   const [dragOver, setDragOver] = useState(false);
   const navigate = useNavigate();
 
-  const { contextSetup, setContextSetup } = useAppStore();
+  const { contextSetup, activateProject, setBriefing } = useAppStore();
   const [clientName, setClientName] = useState(contextSetup.clientName || '');
   const [industry, setIndustry] = useState(contextSetup.industry || '');
   const [painPoints, setPainPoints] = useState(contextSetup.painPoints || '');
@@ -24,13 +24,6 @@ export default function ContextSetup() {
   const { toast } = useToast();
 
   const handleProcess = async (mode: 'upload' | 'synthetic' | 'demo') => {
-    setContextSetup({
-      mode: mode === 'demo' ? 'synthetic' : mode, // Treat demo as synthetic for downstream components
-      clientName: mode === 'synthetic' ? clientName : mode === 'demo' ? 'SmartWings' : undefined,
-      industry: mode === 'synthetic' ? industry : mode === 'demo' ? 'airlines' : undefined,
-      painPoints: mode === 'synthetic' ? painPoints : mode === 'demo' ? 'Pitching Ciklum AI Passenger Tracking' : undefined,
-    });
-
     setLoading(true);
 
     try {
@@ -41,20 +34,17 @@ export default function ContextSetup() {
 
         const briefingData = await fetchMethod;
 
-        // Save the scenario ID in context setup so arena can use it,
-        // and save the rest of the briefing data into the briefing store.
-        setContextSetup({
+        activateProject(briefingData.scenario_id, {
           mode: 'synthetic', // Keep the rest of the app thinking it's a synthetic scenario
           clientName: mode === 'demo' ? 'SmartWings' : clientName,
           industry: mode === 'demo' ? 'airlines' : industry,
           painPoints: mode === 'demo' ? 'Pitching Ciklum AI Passenger Tracking' : painPoints,
-          scenarioId: briefingData.scenario_id,
         });
 
         // Remove scenario_id from briefing before storing it as the types mismatch slightly
         const { scenario_id, ...pureBriefing } = briefingData;
 
-        useAppStore.getState().setBriefing(pureBriefing);
+        setBriefing(pureBriefing);
 
         navigate("/briefing");
       } else {
