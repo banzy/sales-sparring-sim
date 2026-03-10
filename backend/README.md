@@ -45,3 +45,30 @@ You can access the interactive API documentation at `http://localhost:<PORT>/doc
 
 - `scripts/ingest_documents.py`: Ingest documents into the knowledge base.
 - `scripts/generate_synthetic_dataset.py`: Generate synthetic data for testing.
+- `scripts/export_sqlite_snapshot.py`: Export `sparring.db` to a portable SQL snapshot.
+- `scripts/restore_sqlite_snapshot.py`: Restore `sparring.db` from that SQL snapshot.
+
+## Moving The App Between Machines
+
+Git is reliable for code and explicit data artifacts. It is not reliable for live runtime state such as:
+- an actively-written SQLite file
+- browser `localStorage` / Zustand persisted state
+- external Qdrant data
+
+For backend session history, use the SQL snapshot workflow:
+
+On machine A:
+```bash
+npm run db:export
+git add backend/snapshots/sparring.sql
+git commit -m "Update app snapshot"
+git push
+```
+
+On machine B:
+```bash
+git pull
+npm run db:restore
+```
+
+This recreates `backend/sparring.db` from `backend/snapshots/sparring.sql`.
