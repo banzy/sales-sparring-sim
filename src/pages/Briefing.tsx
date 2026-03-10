@@ -1,4 +1,5 @@
-import { Building2, Target, Shield, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Building2, Target, Shield, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,15 @@ import { useAppStore } from "@/store";
 export default function Briefing() {
   const navigate = useNavigate();
   const { briefing } = useAppStore();
+  const [openObjections, setOpenObjections] = useState<string[]>([]);
+
+  const objectionIds = useMemo(() => briefing.objections.map(o => o.id), [briefing.objections]);
+  const allObjectionsOpen = objectionIds.length > 0 && openObjections.length === objectionIds.length;
+
+  useEffect(() => {
+    // Keep state consistent if the objections list changes.
+    setOpenObjections(prev => prev.filter(id => objectionIds.includes(id)));
+  }, [objectionIds]);
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
@@ -27,8 +37,8 @@ export default function Briefing() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
-                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="h-7 w-7 rounded-xl bg-sky-500/15 dark:bg-sky-400/15 flex items-center justify-center">
+                <Building2 className="h-3.5 w-3.5 text-sky-700 dark:text-sky-300" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client Profile</CardTitle>
             </div>
@@ -57,8 +67,8 @@ export default function Briefing() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
-                <Target className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="h-7 w-7 rounded-xl bg-emerald-500/15 dark:bg-emerald-400/15 flex items-center justify-center">
+                <Target className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-300" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Value Proposition</CardTitle>
             </div>
@@ -71,8 +81,8 @@ export default function Briefing() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
-                <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="h-7 w-7 rounded-xl bg-amber-500/20 dark:bg-amber-400/20 flex items-center justify-center">
+                <Shield className="h-3.5 w-3.5 text-amber-700 dark:text-amber-300" />
               </div>
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Buying Constraints</CardTitle>
             </div>
@@ -90,16 +100,37 @@ export default function Briefing() {
 
       <Card className="glass-card">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Anticipated Objections
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Anticipated Objections
+            </CardTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg"
+              aria-label={allObjectionsOpen ? "Collapse all objections" : "Expand all objections"}
+              onClick={() => setOpenObjections(allObjectionsOpen ? [] : objectionIds)}
+            >
+              {allObjectionsOpen ? (
+                <ChevronsDownUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion
+            type="multiple"
+            value={openObjections}
+            onValueChange={setOpenObjections}
+            className="w-full"
+          >
             {briefing.objections.map((obj) => (
               <AccordionItem key={obj.id} value={obj.id}>
                 <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-[#2172B0]">
                     <Badge variant="outline" className="font-mono text-[10px] rounded-lg">OBJ-{obj.id}</Badge>
                     {obj.title}
                   </div>
