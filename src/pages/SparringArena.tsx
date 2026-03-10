@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, PauseCircle, History } from "lucide-react";
+import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, PauseCircle, History, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -579,19 +579,33 @@ export default function SparringArena() {
                   </p>
                   <p className="text-[10px] text-hud-foreground/50">Duration</p>
                 </div>
-                {!isPastSessionView && (
-                  <button
-                    type="button"
-                    onClick={() => setIsDurationPlaying(prev => !prev)}
-                    className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                    aria-label={isDurationPlaying ? "Pause timer" : "Play timer"}
-                  >
-                    {isDurationPlaying ? (
-                      <PauseCircle className="h-5 w-5" />
-                    ) : (
-                      <PlayCircle className="h-5 w-5" />
-                    )}
-                  </button>
+                {!isReadOnlyView && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsDurationPlaying(prev => !prev)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      aria-label={isDurationPlaying ? "Pause timer" : "Play timer"}
+                    >
+                      {isDurationPlaying ? (
+                        <PauseCircle className="h-5 w-5" />
+                      ) : (
+                        <PlayCircle className="h-5 w-5" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDurationPlaying(false);
+                        setDisplayDuration(0);
+                        updateSessionStats({ duration: 0 });
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted text-hud-foreground hover:bg-muted/80 transition-colors"
+                      aria-label="Reset timer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="text-center p-3 rounded-xl bg-muted/50">

@@ -39,7 +39,6 @@ export default function Briefing() {
   const [companyInfoOpen, setCompanyInfoOpen] = useState(false);
   const [companyInfoLoading, setCompanyInfoLoading] = useState(false);
   const [companyInfoError, setCompanyInfoError] = useState<string | null>(null);
-  const [companyInfoOpenedBefore, setCompanyInfoOpenedBefore] = useState(false);
 
   const objectionIds = useMemo(() => briefing.objections.map(o => o.id), [briefing.objections]);
   const allObjectionsOpen = objectionIds.length > 0 && openObjections.length === objectionIds.length;
@@ -73,10 +72,8 @@ export default function Briefing() {
   };
 
   const handleCompanyInfoButtonClick = () => {
-    const shouldRefresh = companyInfoOpenedBefore;
     setCompanyInfoOpen(true);
-    setCompanyInfoOpenedBefore(true);
-    void loadCompanyResearch(shouldRefresh);
+    void loadCompanyResearch(false);
   };
 
   const handleCompanyInfoOpenChange = (open: boolean) => {
@@ -253,15 +250,16 @@ export default function Briefing() {
       </Card>
 
       <Dialog open={companyInfoOpen} onOpenChange={handleCompanyInfoOpenChange}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-xl max-h-[80vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 pt-6">
             <DialogTitle>Company Information</DialogTitle>
             <DialogDescription>
               Perplexity research saved for {briefing.clientProfile.name}.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5">
+          <div className="max-h-[calc(80vh-9rem)] overflow-y-auto px-6 pb-4">
+            <div className="space-y-5 pr-1">
             {companyInfoLoading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -332,9 +330,10 @@ export default function Briefing() {
                 No Perplexity company information has been saved for this scenario yet.
               </div>
             )}
+            </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="border-t px-6 py-4">
             <Button
               type="button"
               variant="outline"
