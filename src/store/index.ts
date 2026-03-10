@@ -247,6 +247,17 @@ function createDefaultSparringSession(
   };
 }
 
+function createFreshSparringSession(
+  briefing: BriefingData,
+  contextSetup: ContextSetupData,
+  difficulty: SparringSession['difficulty'],
+): SparringSession {
+  return {
+    ...createDefaultSparringSession(briefing, contextSetup),
+    difficulty,
+  };
+}
+
 function cloneSparringSession(session: SparringSession): SparringSession {
   return {
     isActive: session.isActive,
@@ -400,19 +411,31 @@ export const useAppStore = create<AppState>()(
           }),
 
         startSparringSession: () =>
-          set((state) =>
-            syncActiveProjectState({
+          set((state) => {
+            const shouldCreateFreshSession = state.performance.overallScore > 0;
+            const nextSession = shouldCreateFreshSession
+              ? createFreshSparringSession(
+                state.briefing,
+                state.contextSetup,
+                state.sparringSession.difficulty,
+              )
+              : cloneSparringSession(state.sparringSession);
+
+            return syncActiveProjectState({
               ...state,
               sparringSession: {
-                ...state.sparringSession,
+                ...nextSession,
                 isActive: true,
                 sessionStats: {
-                  ...state.sparringSession.sessionStats,
+                  ...nextSession.sessionStats,
                   startTime: Date.now(),
                 },
               },
-            })
-          ),
+              performance: shouldCreateFreshSession
+                ? createDefaultPerformance()
+                : clonePerformance(state.performance),
+            });
+          }),
 
         endSparringSession: () =>
           set((state) =>

@@ -94,4 +94,60 @@ describe("active project session state", () => {
     expect(state.sparringSession.messages[0]?.content).toContain("SmartWings");
     expect(state.sparringSession.messages[0]?.content).toContain("Sabre");
   });
+
+  it("starts a fresh live session after a completed session has been scored", () => {
+    useAppStore.getState().activateProject("demo-smartwings-123", {
+      mode: "synthetic",
+      clientName: "SmartWings",
+      industry: "airlines",
+      painPoints: "Pitching Ciklum AI Passenger Tracking",
+    });
+
+    useAppStore.getState().setBriefing({
+      clientProfile: {
+        name: "SmartWings",
+        size: "Enterprise",
+        budgetCycle: "Q4",
+        decisionTimeline: "3 months",
+        buyerPersona: "VP of Operations",
+      },
+      buyingConstraints: [
+        "Must integrate with legacy Sabre systems without downtime",
+        "ROI must be demonstrable within 12 months",
+      ],
+      objections: [
+        { id: "sw-1", title: "Integration risk", detail: "Show how the rollout avoids downtime.", tested: false },
+      ],
+    });
+
+    useAppStore.getState().startSparringSession();
+    useAppStore.getState().addMessage({
+      id: 2,
+      role: "seller",
+      content: "Completed session seller message",
+      timestamp: 1,
+    });
+    useAppStore.getState().addMessage({
+      id: 3,
+      role: "buyer",
+      content: "Completed session buyer message",
+      timestamp: 2,
+    });
+    useAppStore.getState().endSparringSession();
+    useAppStore.getState().setPerformance({
+      overallScore: 78,
+      objectionHandling: 74,
+      communicationClarity: 81,
+      strengths: ["Strong ROI framing"],
+    });
+
+    useAppStore.getState().startSparringSession();
+    const state = useAppStore.getState();
+
+    expect(state.performance.overallScore).toBe(0);
+    expect(state.sparringSession.isActive).toBe(true);
+    expect(state.sparringSession.messages).toHaveLength(1);
+    expect(state.sparringSession.messages[0]?.content).toContain("SmartWings");
+    expect(state.sparringSession.messages[0]?.content).not.toContain("Completed session seller message");
+  });
 });
