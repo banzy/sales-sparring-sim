@@ -1,4 +1,6 @@
+import logging
 from fastapi import APIRouter, HTTPException
+from app.core.llm_client import LLMServiceError
 from app.models.schemas import EvaluateSessionRequest, EvaluateSessionResponse
 from app.api.routes_scenarios import get_scenario
 from app.modules import evaluation_engine
@@ -6,6 +8,7 @@ from app.storage import session_store
 import uuid
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/evaluate_session", response_model=EvaluateSessionResponse)
@@ -46,7 +49,8 @@ def evaluate_session(request: EvaluateSessionRequest):
         
     except HTTPException:
         raise
+    except LLMServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e)) from e
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Unhandled error in evaluate_session")
+        raise HTTPException(status_code=500, detail="Unexpected server error.") from e

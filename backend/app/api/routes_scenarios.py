@@ -1,9 +1,12 @@
+import logging
 from fastapi import APIRouter, HTTPException
+from app.core.llm_client import LLMServiceError
 from app.models.schemas import GenerateClientRequest, GenerateClientResponse
 from app.modules import scenario_builder
 from app.storage import session_store
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/generate_synthetic_client", response_model=GenerateClientResponse)
@@ -24,8 +27,11 @@ def generate_synthetic_client(request: GenerateClientRequest):
         
         session_store.save_scenario(scenario["scenario_id"], scenario)
         return scenario
+    except LLMServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Unhandled error in generate_synthetic_client")
+        raise HTTPException(status_code=500, detail="Unexpected server error.") from e
 
 
 @router.get("/load_demo_scenario", response_model=GenerateClientResponse)

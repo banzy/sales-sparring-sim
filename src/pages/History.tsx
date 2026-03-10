@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   CheckCircle2,
@@ -209,6 +210,7 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
 // ─── Main page ──────────────────────────────────────────────────────────────
 
 export default function History() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -267,7 +269,10 @@ export default function History() {
                     </Badge>
                   ) : (
                     <button
-                      onClick={() => setContextSetup({ scenarioId: pid })}
+                      onClick={() => {
+                        setContextSetup({ scenarioId: pid });
+                        navigate("/arena");
+                      }}
                       className="text-[10px] text-primary hover:underline font-medium"
                     >
                       Set Active
