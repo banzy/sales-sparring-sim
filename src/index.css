@@ -5,6 +5,12 @@
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
 
+@font-face {
+  font-family: 'lcd';
+  src: url('./assets/fonts/lcd.ttf') format('truetype');
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -114,4 +120,34 @@
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+}
+
+/* LCD Clock Matrix LED Effect */
+.lcd-clock {
+  font-family: 'lcd', monospace;
+  font-size: 18px;
+  color: rgba(89, 110, 232, 1);
+  text-shadow: 0 0 10px rgba(51, 255, 188, 0.84);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: baseline;
+}
+
+.lcd-clock .date {
+  font-size: 0.6em;
+  font-family: var(--font-sans);
+  letter-spacing: 0.3px;
+  margin-right: 1em;
+  opacity: 0.72;
+}
+
+.lcd-clock .colon {
+  display: inline-block;
+  width: 0.5em;
+  text-align: center;
+  transition: visibility 0.1s ease-in-out;
+}
+
+.lcd-clock .colon.hidden {
+  visibility: hidden;
 }
