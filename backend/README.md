@@ -35,7 +35,7 @@ This is the FastAPI backend for the Sales Sparring Agent.
 
 Start the development server with auto-reload:
 ```bash
-python -m app.main
+python scripts/run_backend.py
 ```
 
 By default the API runs on `http://localhost:8090` (or `PORT` from `.env`).
@@ -69,6 +69,8 @@ On machine B:
 ```bash
 git pull
 npm run db:restore
+npm run dev:backend
 ```
 
 This recreates `backend/sparring.db` from `backend/snapshots/sparring.sql`.
+`npm run dev:backend` prints the exact DB file and row counts used by the running API process before startup.

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:all": "concurrently \"npm run dev\" \"cd backend && ./.venv/bin/python -m app.main\"",
+    "dev:backend": "cd backend && ./.venv/bin/python scripts/run_backend.py",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "db:export": "cd backend && ./.venv/bin/python scripts/export_sqlite_snapshot.py",
     "db:restore": "cd backend && ./.venv/bin/python scripts/restore_sqlite_snapshot.py --replace",
     "build": "vite build",
