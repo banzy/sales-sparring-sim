@@ -39,7 +39,7 @@ def health():
 if __name__ == "__main__":
     # Load environment variables from .env (including PORT)
     load_dotenv()
-    port = int(os.environ.get("PORT", "8081"))
+    port = int(os.environ.get("PORT", "8000"))
 
     uvicorn.run(
         "app.main:app",

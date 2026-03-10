@@ -6,16 +6,16 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load backend .env so proxy uses same PORT (no hardcoded 8000)
+// Load backend .env so proxy uses same PORT.
 function loadBackendPort(): number {
   if (process.env.PORT) return parseInt(process.env.PORT, 10);
   try {
     const envPath = path.resolve(__dirname, "backend/.env");
     const env = readFileSync(envPath, "utf-8");
     const match = env.match(/^PORT=(.+)$/m);
-    return match ? parseInt(match[1].trim(), 10) : 8081;
+    return match ? parseInt(match[1].trim(), 10) : 8000;
   } catch {
-    return 8081;
+    return 8000;
   }
 }
 const backendPort = loadBackendPort();

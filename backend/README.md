@@ -35,11 +35,11 @@ This is the FastAPI backend for the Sales Sparring Agent.
 
 Start the development server with auto-reload:
 ```bash
-uvicorn app.main:app --reload
+python -m app.main
 ```
 
-The API will be available at `http://localhost:8000`.
-You can access the interactive API documentation at `http://localhost:8000/docs`.
+By default the API runs on `http://localhost:8000` (or `PORT` from `.env`).
+You can access the interactive API documentation at `http://localhost:<PORT>/docs`.
 
 ## Scripts
 
