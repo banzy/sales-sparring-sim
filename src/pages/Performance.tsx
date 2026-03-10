@@ -249,18 +249,18 @@ export default function Performance() {
         </Card>
       </div>
 
-      <Card className="glass-card">
+      <Card className="glass-card !bg-yellow-400">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
               <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <CardTitle className="text-xs font-extrabold uppercase tracking-wide text-[rgba(65,71,83,1)]">
               AI Coach Feedback
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground leading-relaxed">
+        <CardContent className="text-sm text-[rgba(65,71,83,1)] leading-relaxed">
           <p>{performance.aiFeedback}</p>
         </CardContent>
       </Card>

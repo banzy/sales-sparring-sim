@@ -35,6 +35,7 @@ class SessionScore(Base):
     overall_score = Column(Integer)
     objection_handling = Column(Integer)
     communication_clarity = Column(Integer)
+    strengths_json = Column(Text)
     weaknesses_json = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -94,6 +95,36 @@ def _table_columns(conn, table_name: str) -> set[str]:
     return {row[1] for row in rows}
 
 
+SEED_SESSION_STRENGTHS = {
+    "seed-session-sw-001": [
+        "Showed willingness to escalate to the technical team — a good instinct",
+        "Maintained a professional, polite tone throughout the conversation",
+        "Attempted to close with a next-step (demo request)",
+    ],
+    "seed-session-sw-002": [
+        "Strong opening with a concrete ROI figure (40% handling time / 22-pt CSAT) — immediately established credibility",
+        "Excellent handling of integration risk: pre-built Sabre connector, middleware layer, parallel pilot — structured and reassuring",
+        "Union / headcount objection addressed with nuance and a credible productivity argument",
+        "Solid ROI business case with real numbers that the CFO can validate",
+    ],
+}
+
+
+def _decode_json_list(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+
+    if not isinstance(data, list):
+        return []
+
+    return [str(item) for item in data if isinstance(item, str)]
+
+
 def _ensure_project_id_columns(engine: Engine) -> None:
     with engine.begin() as conn:
         session_columns = _table_columns(conn, "sessions")
@@ -110,6 +141,9 @@ def _ensure_project_id_columns(engine: Engine) -> None:
             score_columns = _table_columns(conn, "session_scores")
         if "project_id" not in score_columns:
             conn.execute(text("ALTER TABLE session_scores ADD COLUMN project_id VARCHAR"))
+            score_columns = _table_columns(conn, "session_scores")
+        if "strengths_json" not in score_columns:
+            conn.execute(text("ALTER TABLE session_scores ADD COLUMN strengths_json TEXT DEFAULT '[]'"))
             score_columns = _table_columns(conn, "session_scores")
 
         profile_columns = _table_columns(conn, "sparring_profiles")
@@ -166,6 +200,30 @@ def _ensure_project_id_columns(engine: Engine) -> None:
             )
         )
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_session_scores_project_id ON session_scores(project_id)"))
+        conn.execute(
+            text(
+                """
+                UPDATE session_scores
+                SET strengths_json = '[]'
+                WHERE strengths_json IS NULL OR strengths_json = ''
+                """
+            )
+        )
+        for session_id, strengths in SEED_SESSION_STRENGTHS.items():
+            conn.execute(
+                text(
+                    """
+                    UPDATE session_scores
+                    SET strengths_json = :strengths_json
+                    WHERE session_id = :session_id
+                      AND (strengths_json IS NULL OR strengths_json = '' OR strengths_json = '[]')
+                    """
+                ),
+                {
+                    "session_id": session_id,
+                    "strengths_json": json.dumps(strengths),
+                },
+            )
 
         conn.execute(
             text(
@@ -222,6 +280,7 @@ def _ensure_project_id_columns(engine: Engine) -> None:
                         overall_score INTEGER,
                         objection_handling INTEGER,
                         communication_clarity INTEGER,
+                        strengths_json TEXT,
                         weaknesses_json TEXT,
                         created_at DATETIME
                     )
@@ -238,6 +297,7 @@ def _ensure_project_id_columns(engine: Engine) -> None:
                         overall_score,
                         objection_handling,
                         communication_clarity,
+                        strengths_json,
                         weaknesses_json,
                         created_at
                     )
@@ -252,6 +312,7 @@ def _ensure_project_id_columns(engine: Engine) -> None:
                         overall_score,
                         objection_handling,
                         communication_clarity,
+                        COALESCE(strengths_json, '[]'),
                         weaknesses_json,
                         created_at
                     FROM session_scores
@@ -337,6 +398,7 @@ def save_score(session_id: str, project_id: str, score_data: dict) -> None:
             overall_score=score_data.get("overall_score", 0),
             objection_handling=score_data.get("objection_handling", 0),
             communication_clarity=score_data.get("communication_clarity", 0),
+            strengths_json=json.dumps(score_data.get("strengths", [])),
             weaknesses_json=json.dumps(score_data.get("weaknesses", [])),
         )
         db.add(record)
@@ -417,7 +479,8 @@ def get_all_sessions(project_id: str | None = None) -> list[dict]:
                     "overall_score": score.overall_score if score else None,
                     "objection_handling": score.objection_handling if score else None,
                     "communication_clarity": score.communication_clarity if score else None,
-                    "weaknesses": json.loads(score.weaknesses_json) if score and score.weaknesses_json else [],
+                    "strengths": _decode_json_list(score.strengths_json) if score else [],
+                    "weaknesses": _decode_json_list(score.weaknesses_json) if score else [],
                 }
             )
         return results
@@ -450,7 +513,8 @@ def get_session_detail(session_id: str) -> dict | None:
             "overall_score": score.overall_score if score else None,
             "objection_handling": score.objection_handling if score else None,
             "communication_clarity": score.communication_clarity if score else None,
-            "weaknesses": json.loads(score.weaknesses_json) if score and score.weaknesses_json else [],
+            "strengths": _decode_json_list(score.strengths_json) if score else [],
+            "weaknesses": _decode_json_list(score.weaknesses_json) if score else [],
         }
     finally:
         db.close()

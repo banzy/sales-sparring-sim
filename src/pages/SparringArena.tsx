@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useAppStore, type Message } from "@/store";
 import { api, type SessionSummary } from "@/lib/api";
-import { buildSessionTimeline, getCurrentSessionNumber } from "@/lib/sessionTimeline";
+import { getSessionDisplayState } from "@/lib/sessionTimeline";
 import { useToast } from "@/hooks/use-toast";
 
 type InputMode = "text" | "recording" | "processing";
@@ -113,8 +113,11 @@ export default function SparringArena() {
   const isPastSessionView = selectedPastSessionId !== null;
   const isHistoricalView = !isPastSessionView && activeTurnIndex < latestTurnIndex;
   const isReadOnlyView = isPastSessionView || isHistoricalView;
-  const sessionTimeline = useMemo(() => buildSessionTimeline(pastSessions), [pastSessions]);
-  const currentSessionNumber = useMemo(() => getCurrentSessionNumber(pastSessions), [pastSessions]);
+  const hasLiveProgress = sparringSession.sessionStats.exchanges > 0;
+  const { currentSessionNumber, pastSessions: sessionTimeline } = useMemo(
+    () => getSessionDisplayState(pastSessions, hasLiveProgress),
+    [pastSessions, hasLiveProgress],
+  );
 
   // Calculate which messages to show
   const displayedMessages = useMemo(() => {
@@ -619,6 +622,39 @@ export default function SparringArena() {
                 <p className="text-[10px] text-hud-foreground/50">Exchanges</p>
               </div>
             </div>
+          </div>
+
+          <Separator className="bg-hud-border" />
+
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-3">
+              Active Session
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPastSessionId(null);
+                setSelectedTurn(latestTurnIndex);
+              }}
+              className={`w-full text-left flex items-center justify-between p-2 rounded-lg text-xs transition-colors relative overflow-hidden ${isPastSessionView
+                ? "bg-muted/40 hover:bg-muted/70"
+                : "border border-primary/30 bg-primary/10"
+                }`}
+            >
+              {!isPastSessionView && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
+              <div className={isPastSessionView ? "" : "ml-1"}>
+                <span className="block text-hud-foreground font-semibold">Current Session</span>
+                <span className="block text-[10px] uppercase tracking-widest text-primary/70 font-mono">
+                  Session {currentSessionNumber}
+                </span>
+              </div>
+              <Badge
+                variant={isPastSessionView ? "outline" : "secondary"}
+                className={`font-mono text-[10px] rounded px-1.5 py-0 ${isPastSessionView ? "" : "border-primary/50 text-primary"}`}
+              >
+                {isPastSessionView ? "Return" : "Live"}
+              </Badge>
+            </button>
           </div>
 
           {sessionTimeline.length > 0 && (

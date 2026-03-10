@@ -190,28 +190,54 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
         ))}
       </div>
 
-      {/* Weaknesses */}
-      {detail.weaknesses.length > 0 && (
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
-                <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-              </div>
-              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Weaknesses
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {detail.weaknesses.map((w, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm">
-                <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                <span className="text-muted-foreground">{w}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {(detail.strengths.length > 0 || detail.weaknesses.length > 0) && (
+        <div className="grid gap-5 md:grid-cols-2">
+          {detail.strengths.length > 0 && (
+            <Card className="glass-card">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                    <TrendingUp className="h-3.5 w-3.5 text-success" />
+                  </div>
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Strengths
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {detail.strengths.map((strength, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">{strength}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {detail.weaknesses.length > 0 && (
+            <Card className="glass-card">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                    <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+                  </div>
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Weaknesses
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {detail.weaknesses.map((w, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm">
+                    <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">{w}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* AI Advice */}

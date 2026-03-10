@@ -10,6 +10,7 @@ export interface SessionSummary {
     overall_score: number | null;
     objection_handling: number | null;
     communication_clarity: number | null;
+    strengths: string[];
     weaknesses: string[];
 }
 

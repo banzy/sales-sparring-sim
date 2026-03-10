@@ -531,6 +531,7 @@ def _insert_session(db, session_id: str, transcript: list[dict], score: dict,
         overall_score=score["overall_score"],
         objection_handling=score["objection_handling"],
         communication_clarity=score["communication_clarity"],
+        strengths_json=json.dumps(score.get("strengths", [])),
         weaknesses_json=json.dumps(score.get("weaknesses", [])),
         created_at=ts,
     )

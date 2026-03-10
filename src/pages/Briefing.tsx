@@ -238,8 +238,8 @@ export default function Briefing() {
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="text-sm leading-relaxed text-muted-foreground">
-            <p>{briefing.valueProposition}</p>
+          <CardContent className="text-sm leading-relaxed">
+            <p style={{ color: 'rgba(93, 99, 111, 1)' }}>{briefing.valueProposition}</p>
           </CardContent>
         </Card>
 
