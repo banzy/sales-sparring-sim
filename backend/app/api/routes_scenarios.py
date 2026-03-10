@@ -1,9 +1,16 @@
+import io
 import logging
-from fastapi import APIRouter, HTTPException
-from app.core.llm_client import LLMServiceError
+import uuid
+from typing import List
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+
+from app.core.llm_client import LLMClient, LLMServiceError
 from app.models.schemas import ClientResearchResponse, GenerateClientRequest, GenerateClientResponse
 from app.modules import scenario_builder
 from app.storage import session_store
+from app.storage.vector_store import index_chunks
+from app.utils.chunking import prepare_chunks
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -182,3 +189,135 @@ def refresh_client_research(scenario_id: str):
 
 def get_scenario(scenario_id: str) -> dict:
     return _load_scenario_record(scenario_id)
+
+
+def _extract_text_from_upload(file: UploadFile) -> str:
+    """Best-effort text extraction for TXT, PDF, and DOCX uploads."""
+    filename = file.filename or ""
+    suffix = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    # Read all bytes once; callers are expected to have awaited file.read()
+    if not hasattr(file, "spooled_content"):
+        # Placeholder attribute to satisfy type checkers; actual bytes passed in separately
+        raise RuntimeError("Use _extract_text_from_upload_with_bytes instead.")
+
+    raise RuntimeError("This helper should not be called directly.")
+
+
+async def _read_and_normalise_files(files: List[UploadFile]) -> list[dict]:
+    """Read uploaded files and turn them into document dicts for chunking."""
+    docs: list[dict] = []
+
+    # Lazy imports so that the app can still start even if optional deps are missing
+    try:
+        from pypdf import PdfReader  # type: ignore[import]
+    except Exception:  # pragma: no cover - optional dependency
+        PdfReader = None  # type: ignore[assignment]
+
+    try:
+        from docx import Document  # type: ignore[import]
+    except Exception:  # pragma: no cover - optional dependency
+        Document = None  # type: ignore[assignment]
+
+    for file in files:
+        raw = await file.read()
+        if not raw:
+            continue
+
+        filename = file.filename or "document"
+        suffix = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        text: str | None = None
+
+        if suffix in ("txt", "text", ""):
+            try:
+                text = raw.decode("utf-8", errors="ignore")
+            except Exception:
+                text = None
+        elif suffix == "pdf" and PdfReader is not None:
+            try:
+                reader = PdfReader(io.BytesIO(raw))
+                pages_text = []
+                for page in reader.pages:
+                    page_text = page.extract_text() or ""
+                    pages_text.append(page_text)
+                text = "\n".join(pages_text)
+            except Exception:
+                text = None
+        elif suffix == "docx" and Document is not None:
+            try:
+                doc = Document(io.BytesIO(raw))
+                paragraphs = [p.text for p in doc.paragraphs]
+                text = "\n".join(paragraphs)
+            except Exception:
+                text = None
+
+        if not text:
+            # Skip unsupported or unreadable files
+            logger.warning("Skipping unreadable or unsupported file '%s'", filename)
+            continue
+
+        doc_id = f"{uuid.uuid4()}"
+        docs.append(
+            {
+                "doc_id": doc_id,
+                "text": text,
+                "project_id": None,  # filled by caller
+                "filename": filename,
+                "file_type": suffix or "txt",
+                "file_size": len(raw),
+            }
+        )
+
+    return docs
+
+
+@router.post("/projects/{project_id}/documents")
+async def upload_project_documents(project_id: str, files: List[UploadFile] = File(...)) -> dict:
+    """
+    Upload knowledge documents for a specific project.
+
+    - Extracts text from each file (TXT, PDF, DOCX).
+    - Chunks and embeds with OpenAI.
+    - Indexes chunks in Qdrant with project_id metadata.
+    - Persists document metadata in SQLite.
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
+
+    scenario = session_store.get_scenario(project_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Project/scenario not found")
+
+    raw_docs = await _read_and_normalise_files(files)
+    if not raw_docs:
+        raise HTTPException(status_code=400, detail="No readable documents found in upload")
+
+    # Attach project_id metadata before chunking
+    for doc in raw_docs:
+        doc["project_id"] = project_id
+
+    chunks = prepare_chunks(raw_docs, chunk_size=200, overlap=50)
+
+    llm = LLMClient()
+    texts = [c["text"] for c in chunks]
+    embeddings = llm.embed(texts)
+
+    for chunk, emb in zip(chunks, embeddings):
+        chunk["embedding"] = emb
+
+    # Index in Qdrant – metadata already includes project_id, filename, etc.
+    index_chunks(chunks)
+
+    # Persist high-level document records; use doc_id as qdrant_doc_id group key
+    doc_records = [
+        {
+            "filename": doc["filename"],
+            "file_type": doc.get("file_type"),
+            "file_size": doc.get("file_size"),
+            "qdrant_doc_id": doc["doc_id"],
+        }
+        for doc in raw_docs
+    ]
+    created_docs = session_store.save_project_documents(project_id, doc_records)
+
+    return {"project_id": project_id, "documents": created_docs}

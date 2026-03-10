@@ -5,16 +5,7 @@ import json
 from functools import lru_cache
 from datetime import datetime
 
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Integer,
-    String,
-    Text,
-    create_engine,
-    event,
-    text,
-)
+from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine, event, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -63,6 +54,18 @@ class Scenario(Base):
 
     scenario_id = Column(String, primary_key=True)
     scenario_json = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ProjectDocument(Base):
+    __tablename__ = "project_documents"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(String, index=True, nullable=False)
+    filename = Column(String, nullable=False)
+    file_type = Column(String)
+    file_size = Column(Integer)
+    qdrant_doc_id = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -516,7 +519,7 @@ def get_db_diagnostics() -> dict:
     }
 
     with engine.connect() as conn:
-        for table in ("sessions", "session_scores", "sparring_profiles", "scenarios"):
+        for table in ("sessions", "session_scores", "sparring_profiles", "scenarios", "project_documents"):
             try:
                 count = conn.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar_one()
             except Exception as exc:
@@ -525,3 +528,43 @@ def get_db_diagnostics() -> dict:
                 diagnostics["counts"][table] = count
 
     return diagnostics
+
+
+def save_project_documents(project_id: str, docs: list[dict]) -> list[dict]:
+    """
+    Persist uploaded document metadata for a project.
+
+    Each item in `docs` should contain:
+      - filename (str)
+      - file_type (str | None)
+      - file_size (int | None)
+      - qdrant_doc_id (str | None)
+    """
+    db = _make_session()
+    created: list[dict] = []
+    try:
+        for doc in docs:
+            record = ProjectDocument(
+                project_id=project_id,
+                filename=doc["filename"],
+                file_type=doc.get("file_type"),
+                file_size=doc.get("file_size"),
+                qdrant_doc_id=doc.get("qdrant_doc_id"),
+            )
+            db.add(record)
+            db.flush()
+            created.append(
+                {
+                    "id": record.id,
+                    "project_id": record.project_id,
+                    "filename": record.filename,
+                    "file_type": record.file_type,
+                    "file_size": record.file_size,
+                    "qdrant_doc_id": record.qdrant_doc_id,
+                    "created_at": record.created_at.isoformat() if record.created_at else None,
+                }
+            )
+        db.commit()
+        return created
+    finally:
+        db.close()

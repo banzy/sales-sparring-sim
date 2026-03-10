@@ -1,4 +1,4 @@
-import { Settings, FileText, Swords, BarChart3, ClockIcon } from "lucide-react";
+import { Settings, FolderOpen, FileText, Swords, BarChart3, ClockIcon } from "lucide-react";
 import ciklumLogo from "@/assets/ciklum-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -18,10 +18,11 @@ import {
 
 const navItems = [
   { title: "Context Setup", url: "/", icon: Settings },
+  { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Briefing & Materials", url: "/briefing", icon: FileText },
   { title: "Sparring Arena", url: "/arena", icon: Swords },
   { title: "Performance", url: "/performance", icon: BarChart3 },
-  { title: "History", url: "/history", icon: ClockIcon },
+  { title: "Session's History", url: "/history", icon: ClockIcon },
 ];
 
 export function AppSidebar() {

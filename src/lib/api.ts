@@ -100,6 +100,34 @@ export const api = {
         return await this.loadScenario(data.scenario_id);
     },
 
+    /** Upload knowledge documents for a specific project */
+    async uploadProjectDocuments(
+        projectId: string,
+        files: File[],
+    ): Promise<{ project_id: string; documents: Array<{ id: number; filename: string; file_type?: string | null; file_size?: number | null; qdrant_doc_id?: string | null; created_at?: string | null }> }> {
+        const formData = new FormData();
+        files.forEach((file) => {
+            formData.append("files", file);
+        });
+
+        const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(projectId)}/documents`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!res.ok) {
+            let detail: any = null;
+            try {
+                detail = (await res.json()).detail;
+            } catch {
+                detail = null;
+            }
+            throw new Error(getErrorMessage(`API error: ${res.statusText}`, detail));
+        }
+
+        return await res.json();
+    },
+
     /** Load the hardcoded SmartWings demo scenario */
     async loadDemoClient(): Promise<BriefingData & { scenario_id: string }> {
         const res = await fetch(`${API_BASE}/load_demo_scenario`, {

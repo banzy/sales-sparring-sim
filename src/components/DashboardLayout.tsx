@@ -1,22 +1,20 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
+import { resolveProjectName } from "@/lib/projects";
 import { useAppStore } from "@/store";
 import { LcdClock } from "@/components/LcdClock";
 
 const APP_NAME = "Sales Sparring Agent";
 
-function formatScenarioIdAsProjectName(scenarioId?: string) {
-  if (!scenarioId) return null;
-  return scenarioId.replace("demo-", "").replace("scenario_", "");
-}
-
 export function DashboardLayout() {
   const { contextSetup } = useAppStore();
-  const activeProjectName =
-    contextSetup.clientName?.trim() ||
-    formatScenarioIdAsProjectName(contextSetup.scenarioId) ||
-    "No active project";
+  const activeProjectName = contextSetup.scenarioId
+    ? resolveProjectName({
+      scenarioId: contextSetup.scenarioId,
+      clientName: contextSetup.clientName,
+    })
+    : "No active project";
 
   return (
     <SidebarProvider>

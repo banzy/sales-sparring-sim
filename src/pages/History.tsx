@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api, type SessionDetail, type SessionSummary } from "@/lib/api";
+import { formatScenarioIdAsProjectName } from "@/lib/projects";
 import { useAppStore } from "@/store";
 
 function scoreColor(score: number | null): string {
@@ -49,25 +50,6 @@ function formatDate(iso: string | null): string {
 
 function shortId(id: string): string {
   return id.length > 8 ? id.slice(0, 8).toUpperCase() : id.toUpperCase();
-}
-
-function formatScenarioIdFallback(scenarioId: string): string {
-  if (scenarioId === "demo-smartwings-123") {
-    return "SmartWings";
-  }
-
-  const normalized = scenarioId
-    .replace(/^demo-/, "")
-    .replace(/^scenario_/, "")
-    .replace(/[-_][a-f0-9]{8}$/i, "")
-    .replace(/[-_]+/g, " ")
-    .trim();
-
-  if (!normalized) {
-    return scenarioId;
-  }
-
-  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 // ─── Session List Item ──────────────────────────────────────────────────────
@@ -288,7 +270,7 @@ export default function History() {
     const pid = curr.scenario_id || "Unknown Project";
     if (!acc[pid]) {
       acc[pid] = {
-        label: curr.scenario_name || formatScenarioIdFallback(pid),
+        label: curr.scenario_name || formatScenarioIdAsProjectName(pid) || pid,
         sessions: [],
       };
     }

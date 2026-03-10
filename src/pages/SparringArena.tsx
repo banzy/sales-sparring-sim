@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useAppStore, type Message } from "@/store";
 import { api, type SessionSummary } from "@/lib/api";
+import { buildSessionTimeline, getCurrentSessionNumber } from "@/lib/sessionTimeline";
 import { useToast } from "@/hooks/use-toast";
 
 type InputMode = "text" | "recording" | "processing";
@@ -116,6 +117,8 @@ export default function SparringArena() {
   const isPastSessionView = selectedPastSessionId !== null;
   const isHistoricalView = !isPastSessionView && activeTurnIndex < latestTurnIndex;
   const isReadOnlyView = isPastSessionView || isHistoricalView;
+  const sessionTimeline = useMemo(() => buildSessionTimeline(pastSessions), [pastSessions]);
+  const currentSessionNumber = useMemo(() => getCurrentSessionNumber(pastSessions), [pastSessions]);
 
   // Calculate which messages to show
   const displayedMessages = useMemo(() => {
@@ -617,7 +620,7 @@ export default function SparringArena() {
             </div>
           </div>
 
-          {pastSessions.length > 0 && (
+          {sessionTimeline.length > 0 && (
             <>
               <Separator className="bg-hud-border" />
               <div>
@@ -626,7 +629,7 @@ export default function SparringArena() {
                   Past Sessions
                 </p>
                 <div className="space-y-2">
-                  {[...pastSessions].reverse().map((s, idx) => (
+                  {sessionTimeline.map((s) => (
                     <button
                       key={s.id}
                       type="button"
@@ -639,7 +642,7 @@ export default function SparringArena() {
                         : "bg-muted/40 hover:bg-muted/70"
                         }`}
                     >
-                      <span className="text-hud-foreground/70 font-medium">Session {idx + 1}</span>
+                      <span className="text-hud-foreground/70 font-medium">Session {s.sessionNumber}</span>
                       <Badge variant={s.overall_score && s.overall_score >= 75 ? "default" : s.overall_score && s.overall_score >= 50 ? "secondary" : "destructive"} className="font-mono text-[10px] rounded px-1.5 py-0">
                         {s.overall_score}
                       </Badge>
@@ -651,9 +654,14 @@ export default function SparringArena() {
                     className="w-full text-left flex items-center justify-between p-2 rounded-lg border border-primary/30 bg-primary/10 text-xs relative overflow-hidden"
                   >
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-                    <span className="text-hud-foreground font-semibold ml-1">Current Session</span>
+                    <div className="ml-1">
+                      <span className="block text-hud-foreground font-semibold">Current Session</span>
+                      <span className="block text-[10px] uppercase tracking-widest text-primary/70 font-mono">
+                        Session {currentSessionNumber}
+                      </span>
+                    </div>
                     <Badge variant="outline" className="font-mono text-[10px] rounded px-1.5 py-0 border-primary/50 text-primary">
-                      TBD
+                      Live
                     </Badge>
                   </button>
                 </div>

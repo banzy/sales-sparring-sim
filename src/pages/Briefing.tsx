@@ -333,7 +333,7 @@ export default function Briefing() {
             </div>
           </div>
 
-          <DialogFooter className="border-t px-6 py-4">
+          <DialogFooter className="border-t px-6 pt-3 pb-2">
             <Button
               type="button"
               variant="outline"

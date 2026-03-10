@@ -40,7 +40,7 @@ def index_chunks(chunks: list[dict]) -> None:
     Each chunk dict must have:
       - 'embedding': list[float]
       - 'text': str
-      - 'metadata': dict (arbitrary payload)
+      - 'metadata': dict (arbitrary payload, e.g. project_id, doc_id, filename, etc.)
     """
     settings = get_settings()
     client = _get_client()
@@ -69,7 +69,7 @@ def search(
     Semantic search over the collection.
 
     Optional `filters` dict maps payload field → exact match value,
-    e.g. {"industry": "logistics"}.
+    e.g. {"industry": "logistics"} or {"project_id": "scenario_123"}.
     Returns list of {text, score, metadata} dicts.
     """
     settings = get_settings()

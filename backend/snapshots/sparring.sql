@@ -39,6 +39,17 @@ CREATE TABLE "sparring_profiles" (
                         updated_at DATETIME
                     );
 INSERT INTO "sparring_profiles" VALUES('demo-smartwings-123','intermediate','["Limited direct response to buyer''s specific pain points", "Insufficient handling of objections", "Could have provided more concrete proof points"]',5,'2026-03-10 07:41:47.169546');
+CREATE TABLE "project_documents" (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        project_id VARCHAR NOT NULL,
+                        filename VARCHAR NOT NULL,
+                        file_type VARCHAR,
+                        file_size INTEGER,
+                        qdrant_doc_id VARCHAR,
+                        created_at DATETIME,
+                        FOREIGN KEY(project_id) REFERENCES scenarios(scenario_id)
+                    );
+CREATE INDEX ix_project_documents_project_id ON project_documents(project_id);
 CREATE INDEX ix_sessions_project_id ON sessions(project_id);
 CREATE INDEX ix_sessions_scenario_id ON sessions(scenario_id);
 CREATE INDEX ix_session_scores_project_id ON session_scores(project_id);
