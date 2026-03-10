@@ -4,6 +4,7 @@ from pydantic import field_validator
 from functools import lru_cache
 
 ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+BACKEND_DIR = ENV_FILE.parent
 
 
 class Settings(BaseSettings):
@@ -27,6 +28,24 @@ class Settings(BaseSettings):
     @classmethod
     def strip_api_keys(cls, v: str) -> str:
         return v.strip() if v else v
+
+    @field_validator("database_url")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        sqlite_prefix = "sqlite:///"
+        if not v.startswith(sqlite_prefix):
+            return v
+
+        db_path = v[len(sqlite_prefix):]
+        if db_path == ":memory:":
+            return v
+
+        path_obj = Path(db_path)
+        if path_obj.is_absolute():
+            return v
+
+        resolved = (BACKEND_DIR / path_obj).resolve()
+        return f"{sqlite_prefix}{resolved.as_posix()}"
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
