@@ -7,6 +7,8 @@ export interface SessionSummary {
     scenario_id: string;
     scenario_name?: string | null;
     created_at: string | null;
+    evaluation_insufficient: boolean;
+    evaluation_notice: string | null;
     overall_score: number | null;
     objection_handling: number | null;
     communication_clarity: number | null;

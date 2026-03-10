@@ -12,6 +12,8 @@ function makeSession(id: string, createdAt: string): SessionSummary {
     scenario_id: "demo-smartwings-123",
     project_id: "demo-smartwings-123",
     created_at: createdAt,
+    evaluation_insufficient: false,
+    evaluation_notice: null,
     overall_score: 70,
     objection_handling: 68,
     communication_clarity: 74,

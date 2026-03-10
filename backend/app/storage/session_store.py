@@ -109,6 +109,9 @@ SEED_SESSION_STRENGTHS = {
     ],
 }
 
+MIN_EVALUATION_TOTAL_TURNS = 4
+MIN_EVALUATION_SELLER_TURNS = 2
+
 
 def _decode_json_list(raw: str | None) -> list[str]:
     if not raw:
@@ -123,6 +126,56 @@ def _decode_json_list(raw: str | None) -> list[str]:
         return []
 
     return [str(item) for item in data if isinstance(item, str)]
+
+
+def _normalize_transcript(transcript_json: str | None) -> list[dict]:
+    if not transcript_json:
+        return []
+
+    try:
+        data = json.loads(transcript_json)
+    except json.JSONDecodeError:
+        return []
+
+    return data if isinstance(data, list) else []
+
+
+def _build_evaluation_status(transcript: list[dict]) -> dict:
+    total_turns = 0
+    seller_turns = 0
+
+    for turn in transcript:
+        if not isinstance(turn, dict):
+            continue
+
+        role = str(turn.get("role", "")).strip().lower()
+        content = str(turn.get("content", "")).strip()
+        if role not in {"buyer", "seller"} or not content:
+            continue
+
+        total_turns += 1
+        if role == "seller":
+            seller_turns += 1
+
+    evaluation_insufficient = (
+        seller_turns < MIN_EVALUATION_SELLER_TURNS
+        or total_turns < MIN_EVALUATION_TOTAL_TURNS
+    )
+    evaluation_notice = None
+    if evaluation_insufficient:
+        evaluation_notice = (
+            "Insufficient data to evaluate reliably. "
+            f"This session has {seller_turns} seller turn"
+            f"{'' if seller_turns == 1 else 's'} and {total_turns} total turn"
+            f"{'' if total_turns == 1 else 's'}. "
+            f"Continue the conversation for at least {MIN_EVALUATION_SELLER_TURNS} seller turns "
+            f"and {MIN_EVALUATION_TOTAL_TURNS} total turns."
+        )
+
+    return {
+        "evaluation_insufficient": evaluation_insufficient,
+        "evaluation_notice": evaluation_notice,
+    }
 
 
 def _ensure_project_id_columns(engine: Engine) -> None:
@@ -463,6 +516,8 @@ def get_all_sessions(project_id: str | None = None) -> list[dict]:
 
         results = []
         for session in sessions:
+            transcript = _normalize_transcript(session.transcript_json)
+            evaluation_status = _build_evaluation_status(transcript)
             score = (
                 db.query(SessionScore)
                 .filter_by(session_id=session.id)
@@ -476,6 +531,7 @@ def get_all_sessions(project_id: str | None = None) -> list[dict]:
                     "scenario_id": session.scenario_id,
                     "scenario_name": scenario_names.get(session.scenario_id),
                     "created_at": session.created_at.isoformat() if session.created_at else None,
+                    **evaluation_status,
                     "overall_score": score.overall_score if score else None,
                     "objection_handling": score.objection_handling if score else None,
                     "communication_clarity": score.communication_clarity if score else None,
@@ -496,6 +552,8 @@ def get_session_detail(session_id: str) -> dict | None:
         if not session:
             return None
 
+        transcript = _normalize_transcript(session.transcript_json)
+        evaluation_status = _build_evaluation_status(transcript)
         score = (
             db.query(SessionScore)
             .filter_by(session_id=session_id)
@@ -509,7 +567,8 @@ def get_session_detail(session_id: str) -> dict | None:
             "scenario_id": session.scenario_id,
             "scenario_name": _extract_scenario_name(scenario.scenario_json) if scenario else None,
             "created_at": session.created_at.isoformat() if session.created_at else None,
-            "transcript": json.loads(session.transcript_json) if session.transcript_json else [],
+            "transcript": transcript,
+            **evaluation_status,
             "overall_score": score.overall_score if score else None,
             "objection_handling": score.objection_handling if score else None,
             "communication_clarity": score.communication_clarity if score else None,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AlertTriangle,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -12,6 +13,7 @@ import {
   TrendingUp,
   XCircle,
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -72,15 +74,26 @@ function SessionCard({
         }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-mono text-muted-foreground">#{shortId(session.id)}</span>
-        <Badge variant={scoreBadgeVariant(session.overall_score)} className="font-mono text-[10px] rounded-lg tabular-nums">
-          {session.overall_score ?? "—"}
-        </Badge>
+        <span className="text-xs font-mono text-muted-foreground" style={{ color: 'rgba(88, 92, 101, 1)' }}>#{shortId(session.id)}</span>
+        {session.evaluation_insufficient ? (
+          <Badge variant="outline" className="text-[10px] rounded-lg uppercase tracking-wide border-warning/40 text-warning">
+            Too Short
+          </Badge>
+        ) : (
+          <Badge variant={scoreBadgeVariant(session.overall_score)} className="font-mono text-[10px] rounded-lg tabular-nums">
+            {session.overall_score ?? "—"}
+          </Badge>
+        )}
       </div>
       <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
         <CalendarDays className="h-3 w-3 shrink-0" />
         {formatDate(session.created_at)}
       </p>
+      {session.evaluation_insufficient && (
+        <p className="mt-2 text-[11px] leading-relaxed text-warning">
+          Insufficient data to evaluate.
+        </p>
+      )}
     </button>
   );
 }
@@ -167,99 +180,111 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
         </p>
       </div>
 
-      {/* Score cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Overall", value: detail.overall_score },
-          { label: "Objections", value: detail.objection_handling },
-          { label: "Clarity", value: detail.communication_clarity },
-        ].map(({ label, value }) => (
-          <Card key={label} className="glass-card">
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className={`text-3xl font-bold font-mono ${scoreColor(value)}`}>
-                {value ?? "—"}
+      {detail.evaluation_insufficient ? (
+        <Alert className="border-warning/30 bg-warning/10 text-warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Insufficient data to evaluate</AlertTitle>
+          <AlertDescription className="leading-relaxed">
+            {detail.evaluation_notice ?? "This session is too short for a reliable evaluation."}
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          {/* Score cards */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Overall", value: detail.overall_score },
+              { label: "Objections", value: detail.objection_handling },
+              { label: "Clarity", value: detail.communication_clarity },
+            ].map(({ label, value }) => (
+              <Card key={label} className="glass-card">
+                <CardContent className="pt-4 pb-3 text-center">
+                  <div className={`text-3xl font-bold font-mono ${scoreColor(value)}`}>
+                    {value ?? "—"}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">{label}</p>
+                  <Progress
+                    value={value ?? 0}
+                    className="mt-2 h-1 rounded-full"
+                    indicatorClassName={scoreBarColor(value)}
+                  />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {(detail.strengths.length > 0 || detail.weaknesses.length > 0) && (
+            <div className="grid gap-5 md:grid-cols-2">
+              {detail.strengths.length > 0 && (
+                <Card className="glass-card">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                        <TrendingUp className="h-3.5 w-3.5 text-success" />
+                      </div>
+                      <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Strengths
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {detail.strengths.map((strength, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground">{strength}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {detail.weaknesses.length > 0 && (
+                <Card className="glass-card">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                        <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+                      </div>
+                      <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Weaknesses
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {detail.weaknesses.map((w, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
+                        <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground">{w}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* AI Advice */}
+          <Card className="glass-card">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Lightbulb className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Coach's Advice
+                </CardTitle>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">{label}</p>
-              <Progress
-                value={value ?? 0}
-                className="mt-2 h-1 rounded-full"
-                indicatorClassName={scoreBarColor(value)}
-              />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground leading-relaxed" style={{ color: 'rgba(88, 92, 101, 1)' }}>
+                {detail.weaknesses.length > 0
+                  ? `Before your next session, focus on these areas: ${detail.weaknesses.slice(0, 2).join("; ")}. Practice having concrete data points ready — specific numbers, case studies, and prepared answers for anticipated objections will transform your credibility. Consider role-playing the toughest questions with a colleague before going live.`
+                  : "Great job on this session! Continue building on your strengths and keep practicing with increasingly challenging scenarios to refine your technique."}
+              </p>
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {(detail.strengths.length > 0 || detail.weaknesses.length > 0) && (
-        <div className="grid gap-5 md:grid-cols-2">
-          {detail.strengths.length > 0 && (
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
-                    <TrendingUp className="h-3.5 w-3.5 text-success" />
-                  </div>
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Strengths
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {detail.strengths.map((strength, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{strength}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {detail.weaknesses.length > 0 && (
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
-                    <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-                  </div>
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Weaknesses
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {detail.weaknesses.map((w, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm">
-                    <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{w}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        </>
       )}
-
-      {/* AI Advice */}
-      <Card className="glass-card">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Lightbulb className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Coach's Advice
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {detail.weaknesses.length > 0
-              ? `Before your next session, focus on these areas: ${detail.weaknesses.slice(0, 2).join("; ")}. Practice having concrete data points ready — specific numbers, case studies, and prepared answers for anticipated objections will transform your credibility. Consider role-playing the toughest questions with a colleague before going live.`
-              : "Great job on this session! Continue building on your strengths and keep practicing with increasingly challenging scenarios to refine your technique."}
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Transcript */}
       <TranscriptAccordion transcript={detail.transcript} />
