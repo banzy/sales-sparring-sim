@@ -126,8 +126,7 @@
 .lcd-clock {
   font-family: 'lcd', monospace;
   font-size: 18px;
-  color: rgba(89, 110, 232, 1);
-  text-shadow: 0 0 10px rgba(51, 255, 188, 0.84);
+  color: rgb(23, 37, 115);
   letter-spacing: 2px;
   display: flex;
   align-items: baseline;
@@ -143,7 +142,7 @@
 
 .lcd-clock .colon {
   display: inline-block;
-  width: 0.5em;
+  width: 0.6em;
   text-align: center;
   transition: visibility 0.1s ease-in-out;
 }
