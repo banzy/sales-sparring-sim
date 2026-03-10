@@ -13,7 +13,6 @@ export default function Performance() {
   const { performance, sparringSession, setPerformance } = useAppStore();
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [hasError, setHasError] = useState(false);
-  // @ts-ignore
   const scenarioId = useAppStore(state => state.contextSetup.scenarioId);
 
   const shouldEvaluate = performance.overallScore === 0 && !!scenarioId && sparringSession.messages.length > 0;
@@ -34,13 +33,14 @@ export default function Performance() {
           weaknesses: result.weaknesses,
           aiFeedback: result.aiFeedback,
           evolutionAnalysis: result.evolutionAnalysis,
+          nextFocusAreas: result.nextFocusAreas || [],
         });
 
         // Use the returned nextDifficulty to update local store difficulty
         useAppStore.setState(state => ({
           sparringSession: {
             ...state.sparringSession,
-            // @ts-ignore
+            // @ts-expect-error - Result might contain nextDifficulty which is not in the base PerformanceData interface
             difficulty: result.nextDifficulty || state.sparringSession.difficulty
           }
         }));
@@ -210,8 +210,19 @@ export default function Performance() {
             {sparringSession.difficulty === 'beginner' ? 'Intermediate' :
               sparringSession.difficulty === 'intermediate' ? 'Advanced' : 'Adversarial'}
           </Badge>.
-          The agent will push harder on <span className="font-medium text-foreground">pricing objections</span> and
-          <span className="font-medium text-foreground"> ROI quantification</span>.
+          The agent will push harder on {performance.nextFocusAreas?.length > 0 ? (
+            performance.nextFocusAreas.map((area, i) => (
+              <span key={area}>
+                <span className="font-medium text-foreground">{area}</span>
+                {i < performance.nextFocusAreas.length - 1 ? " and " : ""}
+              </span>
+            ))
+          ) : (
+            <>
+              <span className="font-medium text-foreground">pricing objections</span> and
+              <span className="font-medium text-foreground"> ROI quantification</span>
+            </>
+          )}.
         </AlertDescription>
       </Alert>
     </div>

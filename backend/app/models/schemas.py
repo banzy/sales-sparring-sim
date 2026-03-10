@@ -104,3 +104,4 @@ class EvaluateSessionResponse(BaseModel):
     ai_feedback: str
     evolution_analysis: str
     next_difficulty: str
+    next_focus_areas: list[str] = []

@@ -48,14 +48,12 @@ export default function ContextSetup() {
           clientName: mode === 'demo' ? 'SmartWings' : clientName,
           industry: mode === 'demo' ? 'airlines' : industry,
           painPoints: mode === 'demo' ? 'Pitching Ciklum AI Passenger Tracking' : painPoints,
-          // @ts-ignore
           scenarioId: briefingData.scenario_id,
         });
 
         // Remove scenario_id from briefing before storing it as the types mismatch slightly
         const { scenario_id, ...pureBriefing } = briefingData;
 
-        // @ts-ignore
         useAppStore.getState().setBriefing(pureBriefing);
 
         navigate("/briefing");
@@ -66,12 +64,13 @@ export default function ContextSetup() {
           toast({ variant: "destructive", title: "Upload mode not implemented yet" })
         }, 1000);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate synthetic scenario.";
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description: err.message || "Failed to generate synthetic scenario.",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -209,7 +208,7 @@ export default function ContextSetup() {
         </Card>
 
         {/* Option C: Load Demo */}
-        <Card className="glass-card hover:shadow-md transition-all border-primary/50 relative overflow-hidden bg-[rgba(214,247,255,1)]">
+        <Card className="glass-card hover:shadow-md transition-all border-primary/50 relative overflow-hidden !bg-[#D6F7FF]">
           <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider z-10">
             Recommended
           </div>

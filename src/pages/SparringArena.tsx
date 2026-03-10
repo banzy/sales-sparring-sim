@@ -107,13 +107,25 @@ export default function SparringArena() {
       startSparringSession();
     }
 
+    // Timer for session duration
+    let interval: ReturnType<typeof setInterval>;
+    if (sparringSession.isActive && !isHistoricalView) {
+      interval = setInterval(() => {
+        updateSessionStats({ duration: sparringSession.sessionStats.duration + 1 });
+      }, 1000);
+    }
+
     // Fetch past sessions history
     api.listSessions().then(list => {
       // Exclude current session, filter by active scenarioId, reverse to show oldest first
       const projectSessions = list.filter(s => s.overall_score !== null && s.scenario_id === scenarioId);
       setPastSessions(projectSessions);
     }).catch(console.error);
-  }, [sparringSession.isActive, startSparringSession, scenarioId]);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [sparringSession.isActive, startSparringSession, scenarioId, isHistoricalView, updateSessionStats, sparringSession.sessionStats.duration]);
 
   const { toast } = useToast();
 
@@ -154,16 +166,17 @@ export default function SparringArena() {
 
       // Update objections triggered
       if (response.objections_triggered && response.objections_triggered.length > 0) {
-        response.objections_triggered.forEach((obj: any) => {
+        response.objections_triggered.forEach((obj: { id: string }) => {
           useAppStore.getState().markObjectionTested(obj.id);
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to reach the sparring engine.";
       toast({
         variant: "destructive",
         title: "Communication Error",
-        description: err.message || "Failed to reach the sparring engine.",
+        description: errorMessage,
       });
     } finally {
       setInputMode("text");

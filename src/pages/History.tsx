@@ -260,8 +260,8 @@ export default function History() {
             {projectIds.map(pid => (
               <div key={pid} className="mb-4">
                 <div className="flex items-center justify-between px-2 py-2 mb-1">
-                  <span className="uppercase tracking-wider w-36 truncate" style={{ color: 'rgba(108, 111, 117, 1)', fontWeight: 800, fontSize: '15px' }}>
-                    {pid.replace("demo-", "").replace("scenario_", "")}
+                  <span className="uppercase tracking-wider w-36 truncate" style={{ color: 'rgba(108, 111, 117, 1)', fontWeight: 800, fontSize: '13px' }}>
+                    {pid.includes("-") ? pid.split("-").pop()?.replace("scenario_", "") : pid.replace("scenario_", "")}
                   </span>
                   {activeProjectId === pid ? (
                     <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4 uppercase tracking-widest bg-success">

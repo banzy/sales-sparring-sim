@@ -32,7 +32,8 @@ Return valid JSON exactly matching this structure:
   "strengths": ["string", "string", "string"],
   "weaknesses": ["string", "string", "string"],
   "ai_feedback": "A paragraph summarizing their performance and offering actionable advice.",
-  "evolution_analysis": "An explicit paragraph directed at the user analyzing their evolution. Compare this session against any previous weaknesses provided. State whether they improved, stagnated, or need to focus differently. Provide targeted advice for their next iteration."
+  "evolution_analysis": "An explicit paragraph directed at the user analyzing their evolution. Compare this session against any previous weaknesses provided. State whether they improved, stagnated, or need to focus differently. Provide targeted advice for their next iteration.",
+  "next_focus_areas": ["Pricing Objections", "ROI Quantification"] // 2-3 specific topics to focus on next
 }"""
 
 

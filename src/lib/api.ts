@@ -87,7 +87,7 @@ export const api = {
         scenarioId: string,
         history: Message[],
         userReply: string
-    ): Promise<{ buyer_response: string, turn_feedback: any, objections_triggered: any[] }> {
+    ): Promise<{ buyer_response: string, turn_feedback: { handled_well: boolean; comment: string; weakness_tags: string[] }, objections_triggered: Array<{ id: string; title: string }> }> {
         const res = await fetch(`${API_BASE}/sparring_chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -132,6 +132,7 @@ export const api = {
             aiFeedback: data.ai_feedback,
             evolutionAnalysis: data.evolution_analysis,
             nextDifficulty: data.next_difficulty,
+            nextFocusAreas: data.next_focus_areas || [],
         } as PerformanceData & { nextDifficulty: string };
     },
 

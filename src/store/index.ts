@@ -65,6 +65,7 @@ export interface PerformanceData {
   weaknesses: string[];
   aiFeedback: string;
   evolutionAnalysis: string;
+  nextFocusAreas: string[];
 }
 
 interface AppState {
@@ -150,6 +151,7 @@ export const useAppStore = create<AppState>()(
           weaknesses: [],
           aiFeedback: '',
           evolutionAnalysis: '',
+          nextFocusAreas: [],
         },
 
         setContextSetup: (data) =>
@@ -248,6 +250,7 @@ export const useAppStore = create<AppState>()(
               weaknesses: [],
               aiFeedback: '',
               evolutionAnalysis: '',
+              nextFocusAreas: [],
             },
           }),
       }),
