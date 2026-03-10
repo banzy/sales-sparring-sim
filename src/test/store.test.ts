@@ -25,6 +25,13 @@ describe("active project session state", () => {
         decisionTimeline: "90 days",
         buyerPersona: "Head of Customer Experience",
       },
+      clientResearch: {
+        summary: "SmartWings is a regional airline balancing efficiency, customer experience, and operational reliability.",
+        keyFacts: ["Operates in the airline sector"],
+        strategicPriorities: ["Improve passenger communication"],
+        potentialPainPoints: ["Irregular operations create support spikes"],
+        sources: [{ title: "Corporate site", url: "https://www.smartwings.com" }],
+      },
       objections: [
         { id: "sw-1", title: "Integration risk", detail: "Needs proof it fits the airline stack.", tested: false },
       ],
@@ -51,6 +58,7 @@ describe("active project session state", () => {
     expect(state.contextSetup.scenarioId).toBe(demoId);
     expect(state.contextSetup.clientName).toBe("SmartWings");
     expect(state.briefing.clientProfile.name).toBe("SmartWings");
+    expect(state.briefing.clientResearch?.summary).toContain("regional airline");
     expect(state.sparringSession.messages.at(-1)?.content).toBe("SmartWings-specific opener");
     expect(state.sparringSession.objectionChecklist[0]?.title).toBe("Integration risk");
     expect(state.performance.overallScore).toBe(82);

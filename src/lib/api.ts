@@ -1,5 +1,5 @@
 /** Helper functions for interacting with the FastAPI backend. */
-import type { BriefingData, Message, PerformanceData, SparringSession } from '../store';
+import type { BriefingData, ClientResearch, Message, PerformanceData } from '../store';
 
 export interface SessionSummary {
     id: string;
@@ -18,6 +18,23 @@ export interface SessionDetail extends SessionSummary {
 }
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") || "/api";
+
+function mapClientResearch(data: any): ClientResearch | null {
+    if (!data) {
+        return null;
+    }
+
+    return {
+        summary: data.summary,
+        keyFacts: data.key_facts ?? [],
+        strategicPriorities: data.strategic_priorities ?? [],
+        potentialPainPoints: data.potential_pain_points ?? [],
+        sources: (data.sources ?? []).map((source: any) => ({
+            title: source.title,
+            url: source.url,
+        })),
+    };
+}
 
 export const api = {
     /** Generate a new synthetic client scenario */
@@ -42,6 +59,7 @@ export const api = {
                 decisionTimeline: data.client_profile.decision_timeline,
                 buyerPersona: data.client_profile.buyer_persona,
             },
+            clientResearch: mapClientResearch(data.client_research),
             valueProposition: data.value_proposition,
             buyingConstraints: data.buying_constraints,
             objections: data.objections.map((o: any) => ({
@@ -73,6 +91,7 @@ export const api = {
                 decisionTimeline: data.client_profile.decision_timeline,
                 buyerPersona: data.client_profile.buyer_persona,
             },
+            clientResearch: mapClientResearch(data.client_research),
             valueProposition: data.value_proposition,
             buyingConstraints: data.buying_constraints,
             objections: data.objections.map((o: any) => ({

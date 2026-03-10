@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Target, Shield, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { Building2, ChevronRight, ChevronsDownUp, ChevronsUpDown, ExternalLink, Globe2, Shield, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -135,6 +135,78 @@ export default function Briefing() {
           </CardContent>
         </Card>
       </div>
+
+      {briefing.clientResearch && (
+        <Card className="glass-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-xl bg-cyan-500/15 dark:bg-cyan-400/15 flex items-center justify-center">
+                <Globe2 className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-300" />
+              </div>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Target Client Research
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {briefing.clientResearch.summary}
+            </p>
+
+            <div className="grid gap-5 md:grid-cols-3">
+              <div className="space-y-2.5">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Key Facts</h3>
+                {briefing.clientResearch.keyFacts.map((fact, index) => (
+                  <div key={`${fact}-${index}`} className="flex items-start gap-2.5 text-sm">
+                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
+                    <span className="text-muted-foreground">{fact}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2.5">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Strategic Priorities</h3>
+                {briefing.clientResearch.strategicPriorities.map((priority, index) => (
+                  <div key={`${priority}-${index}`} className="flex items-start gap-2.5 text-sm">
+                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
+                    <span className="text-muted-foreground">{priority}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2.5">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Likely Pain Points</h3>
+                {briefing.clientResearch.potentialPainPoints.map((painPoint, index) => (
+                  <div key={`${painPoint}-${index}`} className="flex items-start gap-2.5 text-sm">
+                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
+                    <span className="text-muted-foreground">{painPoint}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {briefing.clientResearch.sources.length > 0 && (
+              <div className="space-y-2.5">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sources</h3>
+                <div className="flex flex-wrap gap-2">
+                  {briefing.clientResearch.sources.map((source, index) => (
+                    <a
+                      key={`${source.url}-${index}`}
+                      href={source.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:border-primary/40"
+                    >
+                      <span>{source.title}</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="glass-card">
         <CardHeader className="pb-3">

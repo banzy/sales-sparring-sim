@@ -106,9 +106,9 @@ export default function ContextSetup() {
           <Loader2 className="h-10 w-10 text-primary animate-spin" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold">Building Knowledge Base...</h2>
+          <h2 className="text-xl font-semibold">Researching Client And Building Briefing...</h2>
           <p className="text-muted-foreground text-sm max-w-sm">
-            Analyzing documents, extracting personas, and generating objection patterns.
+            Using Perplexity to research the target account, then OpenAI to synthesize the briefing and objection set.
           </p>
         </div>
         <div className="flex gap-2 mt-4">

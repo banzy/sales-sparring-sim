@@ -46,6 +46,7 @@ def load_demo_scenario():
             "decision_timeline": "3 months",
             "buyer_persona": "CIO or VP of Customer Experience, focused on operational efficiency and passenger satisfaction"
         },
+        "client_research": None,
         "value_proposition": "Ciklum provides a full-cycle passenger activity tracking system driven by AI. It manages interactions from initial ticket purchase to cancellations, claims, and missing luggage. Users can make requests via text, document, or bot calls with clear communication at every step. Post-cycle, AI agents generate metrics and survey results. This radically reduces agent handling time and improves CSAT through predictive analytics.",
         "buying_constraints": [
             "Integrating with legacy flight booking systems",

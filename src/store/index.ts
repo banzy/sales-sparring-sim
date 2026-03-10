@@ -25,6 +25,19 @@ export interface ClientProfile {
   buyerPersona: string;
 }
 
+export interface ResearchSource {
+  title: string;
+  url: string;
+}
+
+export interface ClientResearch {
+  summary: string;
+  keyFacts: string[];
+  strategicPriorities: string[];
+  potentialPainPoints: string[];
+  sources: ResearchSource[];
+}
+
 export interface ContextSetupData {
   mode: 'upload' | 'synthetic' | 'demo' | null;
   scenarioId?: string;
@@ -36,6 +49,7 @@ export interface ContextSetupData {
 
 export interface BriefingData {
   clientProfile: ClientProfile;
+  clientResearch: ClientResearch | null;
   valueProposition: string;
   buyingConstraints: string[];
   objections: Objection[];
@@ -110,6 +124,7 @@ const defaultBriefing: BriefingData = {
     decisionTimeline: '6–8 weeks',
     buyerPersona: 'VP of Operations',
   },
+  clientResearch: null,
   valueProposition: 'Our platform reduces operational overhead by 40% within the first quarter, directly addressing your team\'s bottleneck in cross-department workflows. Unlike your current solution, we offer real-time analytics and a 14-day deployment guarantee.',
   buyingConstraints: [
     'Board approval required > $50k',
@@ -177,6 +192,20 @@ function cloneClientProfile(profile: ClientProfile): ClientProfile {
   return { ...profile };
 }
 
+function cloneResearchSource(source: ResearchSource): ResearchSource {
+  return { ...source };
+}
+
+function cloneClientResearch(research: ClientResearch): ClientResearch {
+  return {
+    summary: research.summary,
+    keyFacts: [...research.keyFacts],
+    strategicPriorities: [...research.strategicPriorities],
+    potentialPainPoints: [...research.potentialPainPoints],
+    sources: research.sources.map(cloneResearchSource),
+  };
+}
+
 function cloneContextSetup(contextSetup: ContextSetupData): ContextSetupData {
   return {
     mode: contextSetup.mode,
@@ -190,6 +219,7 @@ function cloneContextSetup(contextSetup: ContextSetupData): ContextSetupData {
 function cloneBriefing(briefing: BriefingData): BriefingData {
   return {
     clientProfile: cloneClientProfile(briefing.clientProfile),
+    clientResearch: briefing.clientResearch ? cloneClientResearch(briefing.clientResearch) : null,
     valueProposition: briefing.valueProposition,
     buyingConstraints: [...briefing.buyingConstraints],
     objections: briefing.objections.map(cloneObjection),
@@ -260,6 +290,9 @@ function mergeBriefing(base: BriefingData, updates: Partial<BriefingData>): Brie
       ...base.clientProfile,
       ...(updates.clientProfile ?? {}),
     },
+    clientResearch: updates.clientResearch === undefined
+      ? (base.clientResearch ? cloneClientResearch(base.clientResearch) : null)
+      : (updates.clientResearch ? cloneClientResearch(updates.clientResearch) : null),
     valueProposition: updates.valueProposition ?? base.valueProposition,
     buyingConstraints: updates.buyingConstraints ? [...updates.buyingConstraints] : [...base.buyingConstraints],
     objections: updates.objections ? updates.objections.map(cloneObjection) : base.objections.map(cloneObjection),

@@ -8,10 +8,17 @@ BACKEND_DIR = ENV_FILE.parent
 
 
 class Settings(BaseSettings):
+    # LLM Provider Selection
+    llm_provider: str = "openai"  # "openai" or "perplexity"
+
     # OpenAI
     openai_api_key: str
     openai_model: str = "gpt-4o-mini"
     openai_embedding_model: str = "text-embedding-3-small"
+
+    # Perplexity
+    perplexity_api_key: str | None = None
+    perplexity_model: str = "sonar"
 
     # Qdrant
     qdrant_url: str

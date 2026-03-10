@@ -24,6 +24,19 @@ class ClientProfile(BaseModel):
     buyer_persona: str
 
 
+class ResearchSource(BaseModel):
+    title: str
+    url: str
+
+
+class ClientResearch(BaseModel):
+    summary: str
+    key_facts: list[str]
+    strategic_priorities: list[str]
+    potential_pain_points: list[str]
+    sources: list[ResearchSource] = []
+
+
 class ChatMessage(BaseModel):
     role: str  # "buyer" | "seller"
     content: str
@@ -42,6 +55,7 @@ class GenerateClientRequest(BaseModel):
 class GenerateClientResponse(BaseModel):
     scenario_id: str
     client_profile: ClientProfile
+    client_research: Optional[ClientResearch] = None
     value_proposition: str
     buying_constraints: list[str]
     objections: list[Objection]
