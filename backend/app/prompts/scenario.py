@@ -64,3 +64,7 @@ def build_scenario_user_prompt(
             "client_research_json": research_json,
         },
     )
+
+
+# Backward-compatible exports for older imports via app.prompts.__init__.
+SCENARIO_SYSTEM_PROMPT = get_scenario_system_prompt()

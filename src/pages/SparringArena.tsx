@@ -579,18 +579,20 @@ export default function SparringArena() {
                   </p>
                   <p className="text-[10px] text-hud-foreground/50">Duration</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsDurationPlaying(prev => !prev)}
-                  className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                  aria-label={isDurationPlaying ? "Pause timer" : "Play timer"}
-                >
-                  {isDurationPlaying ? (
-                    <PauseCircle className="h-5 w-5" />
-                  ) : (
-                    <PlayCircle className="h-5 w-5" />
-                  )}
-                </button>
+                {!isPastSessionView && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDurationPlaying(prev => !prev)}
+                    className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    aria-label={isDurationPlaying ? "Pause timer" : "Play timer"}
+                  >
+                    {isDurationPlaying ? (
+                      <PauseCircle className="h-5 w-5" />
+                    ) : (
+                      <PlayCircle className="h-5 w-5" />
+                    )}
+                  </button>
+                )}
               </div>
               <div className="text-center p-3 rounded-xl bg-muted/50">
                 <p className="text-lg font-bold font-mono text-hud-foreground">
