@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from datetime import datetime
 
 from sqlalchemy import (
@@ -11,6 +12,7 @@ from sqlalchemy import (
     String,
     Text,
     create_engine,
+    event,
     text,
 )
 from sqlalchemy.engine import Engine
@@ -64,9 +66,24 @@ class Scenario(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+@lru_cache
 def _engine() -> Engine:
     settings = get_settings()
-    return create_engine(settings.database_url, connect_args={"check_same_thread": False})
+    is_sqlite = settings.database_url.startswith("sqlite")
+    engine = create_engine(
+        settings.database_url,
+        connect_args={"check_same_thread": False} if is_sqlite else {},
+    )
+
+    if is_sqlite:
+        @event.listens_for(engine, "connect")
+        def _set_sqlite_pragmas(dbapi_connection, connection_record) -> None:
+            cursor = dbapi_connection.cursor()
+            # Keep writes in the main .db file to avoid missing WAL sidecar data in Git sync.
+            cursor.execute("PRAGMA journal_mode=DELETE")
+            cursor.close()
+
+    return engine
 
 
 def _table_columns(conn, table_name: str) -> set[str]:

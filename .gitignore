@@ -31,3 +31,8 @@ backend/app/__pycache__
 backend/app/models
 backend/app/modules/__pycache__
 backend/app/storage
+
+# Avoid accidental DB writes outside backend/.
+/sparring.db
+/sparring.db-wal
+/sparring.db-shm
