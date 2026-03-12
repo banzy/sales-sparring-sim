@@ -554,8 +554,8 @@ export default function SparringArena() {
       </div>
 
       {/* HUD Panel - 30% */}
-      <div className="flex-[3] hud-panel flex flex-col border-l overflow-auto">
-        <div className="p-5 space-y-5">
+      <div className="flex-[3] hud-panel flex flex-col border-l overflow-hidden">
+        <div className="flex-1 overflow-auto p-5 space-y-5">
           {isReadOnlyView && (
             <div className="bg-muted/60 border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 font-medium mb-1.5">
@@ -731,7 +731,7 @@ export default function SparringArena() {
         </div>
 
         {!isReadOnlyView && (
-          <div className="mt-auto p-5">
+          <div className="sticky bottom-0 p-5 bg-background border-t border-border">
             <Button
               variant="destructive"
               className="w-full rounded-xl"
