@@ -104,7 +104,7 @@ interface AppState {
   activateProject: (scenarioId: string, contextOverrides?: Partial<ContextSetupData>) => void;
   setBriefing: (data: Partial<BriefingData>) => void;
 
-  startSparringSession: () => void;
+  startSparringSession: (masteredObjectionIds?: Set<string>) => void;
   endSparringSession: () => void;
   addMessage: (message: Message) => void;
   setInputMode: (mode: 'text' | 'recording' | 'processing') => void;
@@ -192,6 +192,55 @@ function cloneObjection(objection: Objection): Objection {
   return { ...objection };
 }
 
+/**
+ * Selects a varied subset of objections for a new session.
+ * Prioritizes objections the user hasn't mastered yet, while ensuring variety.
+ * 
+ * @param allObjections - All objections available for the scenario
+ * @param masteredObjectionIds - IDs of objections the user has successfully handled in past sessions
+ * @param targetCount - How many objections to include in the session (default: 3-4)
+ * @returns A subset of objections for this session
+ */
+function selectSessionObjections(
+  allObjections: Objection[],
+  masteredObjectionIds: Set<string>,
+  targetCount?: number
+): Objection[] {
+  if (allObjections.length === 0) return [];
+  
+  const count = targetCount ?? Math.min(4, Math.max(3, allObjections.length));
+  
+  if (allObjections.length <= count) {
+    return shuffleArray([...allObjections]);
+  }
+
+  const unmastered = allObjections.filter(o => !masteredObjectionIds.has(o.id));
+  const mastered = allObjections.filter(o => masteredObjectionIds.has(o.id));
+  
+  const selected: Objection[] = [];
+  
+  const shuffledUnmastered = shuffleArray([...unmastered]);
+  const unmasteredToTake = Math.min(shuffledUnmastered.length, count);
+  selected.push(...shuffledUnmastered.slice(0, unmasteredToTake));
+  
+  if (selected.length < count && mastered.length > 0) {
+    const shuffledMastered = shuffleArray([...mastered]);
+    const remaining = count - selected.length;
+    selected.push(...shuffledMastered.slice(0, remaining));
+  }
+  
+  return shuffleArray(selected);
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 function cloneClientProfile(profile: ClientProfile): ClientProfile {
   return { ...profile };
 }
@@ -255,10 +304,18 @@ function createFreshSparringSession(
   briefing: BriefingData,
   contextSetup: ContextSetupData,
   difficulty: SparringSession['difficulty'],
+  masteredObjectionIds: Set<string> = new Set(),
 ): SparringSession {
+  const baseSession = createDefaultSparringSession(briefing, contextSetup);
+  const selectedObjections = selectSessionObjections(
+    briefing.objections,
+    masteredObjectionIds
+  );
+  
   return {
-    ...createDefaultSparringSession(briefing, contextSetup),
+    ...baseSession,
     difficulty,
+    objectionChecklist: selectedObjections.map(cloneObjection),
   };
 }
 
@@ -420,7 +477,7 @@ export const useAppStore = create<AppState>()(
             });
           }),
 
-        startSparringSession: () =>
+        startSparringSession: (masteredObjectionIds?: Set<string>) =>
           set((state) => {
             const shouldCreateFreshSession =
               !state.sparringSession.isActive &&
@@ -430,6 +487,7 @@ export const useAppStore = create<AppState>()(
                 state.briefing,
                 state.contextSetup,
                 state.sparringSession.difficulty,
+                masteredObjectionIds ?? new Set(),
               )
               : cloneSparringSession(state.sparringSession);
 

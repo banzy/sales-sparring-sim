@@ -64,6 +64,7 @@ export default function SparringArena() {
   const [recordingStart, setRecordingStart] = useState(0);
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
   const [pastSessions, setPastSessions] = useState<SessionSummary[]>([]);
+  const [pastSessionsLoaded, setPastSessionsLoaded] = useState(false);
   const [selectedPastSessionId, setSelectedPastSessionId] = useState<string | null>(null);
   const [pastSessionMessages, setPastSessionMessages] = useState<Message[] | null>(null);
   const [isPastSessionLoading, setIsPastSessionLoading] = useState(false);
@@ -150,9 +151,13 @@ export default function SparringArena() {
 
   useEffect(() => {
     if (!sparringSession.isActive && !isPastSessionView) {
-      startSparringSession();
+      const isFirstSession = sparringSession.sessionStats.exchanges === 0;
+      const canStartFreshSession = isFirstSession || pastSessionsLoaded;
+      if (canStartFreshSession) {
+        startSparringSession(cumulativeCompletedObjections);
+      }
     }
-  }, [sparringSession.isActive, startSparringSession, isPastSessionView]);
+  }, [sparringSession.isActive, sparringSession.sessionStats.exchanges, startSparringSession, isPastSessionView, pastSessionsLoaded, cumulativeCompletedObjections]);
 
   useEffect(() => {
     if (!sparringSession.isActive || isReadOnlyView || !isDurationPlaying) {
@@ -172,6 +177,7 @@ export default function SparringArena() {
   useEffect(() => {
     if (!scenarioId) {
       setPastSessions([]);
+      setPastSessionsLoaded(true);
       setSelectedPastSessionId(null);
       setPastSessionMessages(null);
       setIsPastSessionLoading(false);
@@ -180,6 +186,7 @@ export default function SparringArena() {
 
     let cancelled = false;
     setPastSessions([]);
+    setPastSessionsLoaded(false);
     setSelectedPastSessionId(null);
     setPastSessionMessages(null);
     setIsPastSessionLoading(false);
@@ -194,10 +201,12 @@ export default function SparringArena() {
         (session.scenario_id === scenarioId || session.project_id === scenarioId)
       );
       setPastSessions(projectSessions);
+      setPastSessionsLoaded(true);
     }).catch((error) => {
       console.error(error);
       if (!cancelled) {
         setPastSessions([]);
+        setPastSessionsLoaded(true);
         toast({
           variant: "destructive",
           title: "Failed to load past sessions",
