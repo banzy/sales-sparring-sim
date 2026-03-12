@@ -119,18 +119,21 @@ class EvaluateSessionRequest(BaseModel):
 
 
 class ScoreBreakdown(BaseModel):
-    clarity: int = Field(ge=1, le=5)
-    relevance: int = Field(ge=1, le=5)
-    groundedness: int = Field(ge=1, le=5)
-    persuasiveness: int = Field(ge=1, le=5)
-    objection_handling: int = Field(ge=1, le=5)
-    conciseness: int = Field(ge=1, le=5)
+    clarity: int = Field(ge=1, le=10)
+    relevance: int = Field(ge=1, le=10)
+    groundedness: int = Field(ge=1, le=10)
+    persuasiveness: int = Field(ge=1, le=10)
+    objection_handling: int = Field(ge=1, le=10)
+    conciseness: int = Field(ge=1, le=10)
 
 
 class EvaluateSessionResponse(BaseModel):
     overall_score: int           # 0–100
     objection_handling: int      # 0–100
     communication_clarity: int   # 0–100
+    clarity: int = 0             # 0–100
+    relevance: int = 0           # 0–100
+    groundedness: int = 0        # 0–100
     score_breakdown: ScoreBreakdown
     strengths: list[str]
     weaknesses: list[str]

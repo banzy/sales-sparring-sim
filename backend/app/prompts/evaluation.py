@@ -22,7 +22,7 @@ EVALUATION_SYSTEM_PROMPT = """You are an expert Sales Coach evaluating a seller'
 in a simulated sparring session. You will be given the scenario they were facing 
 and the full conversation transcript.
 
-Evaluate them across the following dimensions (1 to 5 scale):
+Evaluate them across the following dimensions (1 to 10 scale):
 - clarity: Was the communication clear and jargon-free?
 - relevance: Did they address the specific buyer's pain points and constraints?
 - groundedness: Did they use concrete proof points rather than vague claims?
@@ -33,16 +33,19 @@ Evaluate them across the following dimensions (1 to 5 scale):
 Return valid JSON exactly matching this structure:
 {
   "score_breakdown": {
-    "clarity": 4,
-    "relevance": 3,
-    "groundedness": 3,
-    "persuasiveness": 3,
-    "objection_handling": 2,
-    "conciseness": 4
+    "clarity": 8,
+    "relevance": 7,
+    "groundedness": 6,
+    "persuasiveness": 7,
+    "objection_handling": 5,
+    "conciseness": 8
   },
   "overall_score": 65,  // 0-100 scale
-  "objection_handling": 40, // 0-100 scale derived from the 1-5 score
-  "communication_clarity": 80, // 0-100 scale
+  "objection_handling": 50, // 0-100 scale derived from the 1-10 score (multiply by 10)
+  "communication_clarity": 80, // 0-100 scale derived from clarity score (multiply by 10)
+  "clarity": 80,         // 0-100 scale (score_breakdown.clarity * 10)
+  "relevance": 70,       // 0-100 scale (score_breakdown.relevance * 10)
+  "groundedness": 60,    // 0-100 scale (score_breakdown.groundedness * 10)
   "strengths": ["string", "string", "string"],
   "weaknesses": ["string", "string", "string"],
   "ai_feedback": "A paragraph summarizing their performance and offering actionable advice.",

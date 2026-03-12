@@ -16,7 +16,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api, type SessionDetail, type SessionSummary } from "@/lib/api";
 import { formatScenarioIdAsProjectName } from "@/lib/projects";
@@ -27,13 +26,6 @@ function scoreColor(score: number | null): string {
   if (score >= 75) return "text-success";
   if (score >= 50) return "text-warning";
   return "text-destructive";
-}
-
-function scoreBarColor(score: number | null): string {
-  if (score === null) return "bg-muted-foreground/40";
-  if (score >= 75) return "bg-success";
-  if (score >= 50) return "bg-warning";
-  return "bg-destructive";
 }
 
 function scoreBadgeVariant(score: number | null): "default" | "secondary" | "destructive" | "outline" {
@@ -52,6 +44,12 @@ function formatDate(iso: string | null): string {
 
 function shortId(id: string): string {
   return id.length > 8 ? id.slice(0, 8).toUpperCase() : id.toUpperCase();
+}
+
+function formatScoreOutOfTen(score: number | null | undefined): string {
+  if (score === null || score === undefined) return "—";
+  const value = score / 10;
+  return Number.isInteger(value) ? `${value}/10` : `${value.toFixed(1)}/10`;
 }
 
 // ─── Session List Item ──────────────────────────────────────────────────────
@@ -193,29 +191,78 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
         </Alert>
       ) : (
         <>
-          {/* Score cards */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: "Overall", value: detail.overall_score },
-              { label: "Objections", value: detail.objection_handling },
-              { label: "Clarity", value: detail.communication_clarity },
-            ].map(({ label, value }) => (
-              <Card key={label} className="glass-card">
-                <CardContent className="pt-4 pb-3 text-center">
-                  <div className={`text-3xl font-bold font-mono ${scoreColor(value)}`}>
-                    {value ?? "—"}
+          {/* Two-column layout: Scorecard + Coach's Advice */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Session Scorecard */}
+            <Card className="glass-card">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">{label}</p>
-                  <Progress
-                    value={value ?? 0}
-                    className="mt-2 h-1 rounded-full"
-                    indicatorClassName={scoreBarColor(value)}
-                  />
-                </CardContent>
-              </Card>
-            ))}
+                  <CardTitle className="text-sm font-semibold">
+                    Session Scorecard
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {[
+                  { label: "Clarity", value: detail.communication_clarity },
+                  { label: "Relevance", value: detail.relevance ?? null },
+                  { label: "Groundedness", value: detail.groundedness ?? null },
+                  { label: "Objection Handling", value: detail.objection_handling },
+                ].map(({ label, value }) => (
+                  <div key={label} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">{label}</span>
+                      <span className="text-sm font-medium tabular-nums text-foreground">
+                        {formatScoreOutOfTen(value)}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-primary/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-cyan-400 transition-all"
+                        style={{ width: `${value ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                {/* Overall score - larger display */}
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Overall</span>
+                    <span className="text-2xl font-bold tabular-nums text-cyan-400">
+                      {detail.overall_score !== null ? `${detail.overall_score / 10} / 10` : "—"}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Coach's Advice */}
+            <Card className="glass-card">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Lightbulb className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">
+                    Coach's Advice
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground leading-relaxed" style={{ color: 'rgba(88, 92, 101, 1)' }}>
+                  {detail.weaknesses.length > 0
+                    ? `Before your next session, focus on these areas: ${detail.weaknesses.slice(0, 2).join("; ")}. Practice having concrete data points ready — specific numbers, case studies, and prepared answers for anticipated objections will transform your credibility. Consider role-playing the toughest questions with a colleague before going live.`
+                    : "Great job on this session! Continue building on your strengths and keep practicing with increasingly challenging scenarios to refine your technique."}
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
+          {/* Strengths & Areas to Improve - two columns */}
           {(detail.strengths.length > 0 || detail.weaknesses.length > 0) && (
             <div className="grid gap-5 md:grid-cols-2">
               {detail.strengths.length > 0 && (
@@ -249,7 +296,7 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
                         <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                       </div>
                       <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Weaknesses
+                        Areas to Improve
                       </CardTitle>
                     </div>
                   </CardHeader>
@@ -265,27 +312,6 @@ function SessionDetailPanel({ sessionId }: { sessionId: string }) {
               )}
             </div>
           )}
-
-          {/* AI Advice */}
-          <Card className="glass-card">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Lightbulb className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Coach's Advice
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground leading-relaxed" style={{ color: 'rgba(88, 92, 101, 1)' }}>
-                {detail.weaknesses.length > 0
-                  ? `Before your next session, focus on these areas: ${detail.weaknesses.slice(0, 2).join("; ")}. Practice having concrete data points ready — specific numbers, case studies, and prepared answers for anticipated objections will transform your credibility. Consider role-playing the toughest questions with a colleague before going live.`
-                  : "Great job on this session! Continue building on your strengths and keep practicing with increasingly challenging scenarios to refine your technique."}
-              </p>
-            </CardContent>
-          </Card>
         </>
       )}
 

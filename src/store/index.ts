@@ -75,6 +75,9 @@ export interface PerformanceData {
   overallScore: number;
   objectionHandling: number;
   communicationClarity: number;
+  clarity: number;
+  relevance: number;
+  groundedness: number;
   strengths: string[];
   weaknesses: string[];
   aiFeedback: string;
@@ -275,6 +278,9 @@ function createDefaultPerformance(): PerformanceData {
     overallScore: 0,
     objectionHandling: 0,
     communicationClarity: 0,
+    clarity: 0,
+    relevance: 0,
+    groundedness: 0,
     strengths: [],
     weaknesses: [],
     aiFeedback: '',
@@ -288,6 +294,9 @@ function clonePerformance(performance: PerformanceData): PerformanceData {
     overallScore: performance.overallScore,
     objectionHandling: performance.objectionHandling,
     communicationClarity: performance.communicationClarity,
+    clarity: performance.clarity ?? 0,
+    relevance: performance.relevance ?? 0,
+    groundedness: performance.groundedness ?? 0,
     strengths: [...performance.strengths],
     weaknesses: [...performance.weaknesses],
     aiFeedback: performance.aiFeedback,

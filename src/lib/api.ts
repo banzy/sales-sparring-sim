@@ -12,6 +12,8 @@ export interface SessionSummary {
     overall_score: number | null;
     objection_handling: number | null;
     communication_clarity: number | null;
+    relevance?: number | null;
+    groundedness?: number | null;
     strengths: string[];
     weaknesses: string[];
 }
@@ -235,6 +237,9 @@ export const api = {
             overallScore: data.overall_score,
             objectionHandling: data.objection_handling,
             communicationClarity: data.communication_clarity,
+            clarity: data.clarity ?? 0,
+            relevance: data.relevance ?? 0,
+            groundedness: data.groundedness ?? 0,
             strengths: data.strengths,
             weaknesses: data.weaknesses,
             aiFeedback: data.ai_feedback,

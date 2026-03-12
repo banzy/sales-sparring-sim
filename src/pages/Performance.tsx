@@ -11,7 +11,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { useAppStore } from '@/store';
 import type { SparringSession } from '@/store';
 import { api } from '@/lib/api';
@@ -62,6 +61,9 @@ export default function Performance() {
           overallScore: result.overallScore,
           objectionHandling: result.objectionHandling,
           communicationClarity: result.communicationClarity,
+          clarity: result.clarity,
+          relevance: result.relevance,
+          groundedness: result.groundedness,
           strengths: result.strengths,
           weaknesses: result.weaknesses,
           aiFeedback: result.aiFeedback,
@@ -159,25 +161,35 @@ export default function Performance() {
     );
   }
 
-  if (!hasEvaluationData && !globalPerformance) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold">
-            {isLoadingGlobal ? 'Loading Performance...' : 'No Performance Data'}
-          </h2>
-          <p className="text-muted-foreground text-sm max-w-sm">
-            {isLoadingGlobal
-              ? 'Fetching your past demo sessions.'
-              : 'Complete a session in the Sparring Arena to see your performance and history.'}
-          </p>
-          {globalError && (
-            <p className="text-xs text-destructive mt-2">{globalError}</p>
-          )}
-        </div>
-      </div>
-    );
+  // Convert 0-100 backend values → "X.X" /10 for display
+  function toTen(val: number): string {
+    return (val / 10).toFixed(1);
   }
+
+  const scores = hasEvaluationData
+    ? {
+        clarity: performance.clarity,
+        relevance: performance.relevance,
+        groundedness: performance.groundedness,
+        objectionHandling: performance.objectionHandling,
+        overall: performance.overallScore,
+      }
+    : {
+        clarity: globalPerformance?.communicationClarity ?? 0,
+        relevance: 0,
+        groundedness: 0,
+        objectionHandling: globalPerformance?.objectionHandling ?? 0,
+        overall: globalPerformance?.overallScore ?? 0,
+      };
+
+  type ScoreMetric = { label: string; value: number; color: string; trackColor: string };
+
+  const scoreMetrics: ScoreMetric[] = [
+    { label: 'Clarity',            value: scores.clarity,           color: 'text-sky-400',     trackColor: 'bg-sky-400' },
+    { label: 'Relevance',          value: scores.relevance,         color: 'text-violet-400',  trackColor: 'bg-violet-400' },
+    { label: 'Groundedness',       value: scores.groundedness,      color: 'text-emerald-400', trackColor: 'bg-emerald-400' },
+    { label: 'Objection Handling', value: scores.objectionHandling, color: 'text-amber-400',   trackColor: 'bg-amber-400' },
+  ];
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
@@ -206,71 +218,55 @@ export default function Performance() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-5">
-        <Card className="glass-card">
-          <CardContent className="pt-6 text-center">
-            <div className="text-5xl font-bold font-mono text-primary">
-              {hasEvaluationData
-                ? performance.overallScore
-                : globalPerformance?.overallScore ?? 0}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">
-              Overall Score
-            </p>
-            <Progress
-              value={
-                hasEvaluationData
-                  ? performance.overallScore
-                  : globalPerformance?.overallScore ?? 0
-              }
-              className="mt-4 h-1.5 rounded-full"
-            />
-          </CardContent>
-        </Card>
+      {/* ── Session Scorecard ─────────────────────────────────────── */}
+      <Card className="glass-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Session Scorecard
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
+            {/* Individual dimension metrics */}
+            {scoreMetrics.map((m) => (
+              <div key={m.label} className="flex flex-col gap-2">
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-3xl font-bold font-mono ${m.color}`}>
+                    {toTen(m.value)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/10</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-tight">{m.label}</p>
+                <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${m.trackColor} transition-all duration-700`}
+                    style={{ width: `${m.value}%` }}
+                  />
+                </div>
+              </div>
+            ))}
 
-        <Card className="glass-card">
-          <CardContent className="pt-6 text-center">
-            <div className="text-5xl font-bold font-mono text-foreground">
-              {hasEvaluationData
-                ? performance.objectionHandling
-                : globalPerformance?.objectionHandling ?? 0}
+            {/* Overall – visually separated and highlighted */}
+            <div className="flex flex-col gap-2 sm:border-l sm:border-border sm:pl-4">
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold font-mono text-primary">
+                  {toTen(scores.overall)}
+                </span>
+                <span className="text-xs text-muted-foreground">/10</span>
+              </div>
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Overall</p>
+              <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-700"
+                  style={{ width: `${scores.overall}%` }}
+                />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">
-              Objection Handling
-            </p>
-            <Progress
-              value={
-                hasEvaluationData
-                  ? performance.objectionHandling
-                  : globalPerformance?.objectionHandling ?? 0
-              }
-              className="mt-4 h-1.5 rounded-full"
-            />
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="glass-card">
-          <CardContent className="pt-6 text-center">
-            <div className="text-5xl font-bold font-mono text-foreground">
-              {hasEvaluationData
-                ? performance.communicationClarity
-                : globalPerformance?.communicationClarity ?? 0}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">
-              Communication Clarity
-            </p>
-            <Progress
-              value={
-                hasEvaluationData
-                  ? performance.communicationClarity
-                  : globalPerformance?.communicationClarity ?? 0
-              }
-              className="mt-4 h-1.5 rounded-full"
-            />
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* ── Strengths & Weaknesses ───────────────────────────────── */}
       <div className="grid md:grid-cols-2 gap-5">
         <Card className="glass-card">
           <CardHeader className="pb-3">
