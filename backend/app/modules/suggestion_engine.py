@@ -86,7 +86,11 @@ def suggest_response(
     rag_formatted = "No knowledge base documents uploaded for this project."
     if last_buyer_msg:
         try:
-            rag_chunks = rag_retriever.build_context_for_scenario(scenario, last_buyer_msg)
+            rag_chunks = rag_retriever.build_context_for_scenario(
+                scenario=scenario, 
+                query=last_buyer_msg, 
+                project_id=project_id,
+            )
             rag_formatted = rag_retriever.format_context(rag_chunks)
         except Exception:
             logger.warning("RAG retrieval failed, proceeding without vector context", exc_info=True)

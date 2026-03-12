@@ -19,11 +19,13 @@ def retrieve_context(
     return vector_store.search(query_vector, top_k=top_k, filters=filters)
 
 
-def build_context_for_scenario(scenario: dict, query: str) -> list[dict]:
-    """Build a targeted retrieval query enriched with scenario metadata."""
+def build_context_for_scenario(scenario: dict, query: str, project_id: str | None = None) -> list[dict]:
+    """Build a targeted retrieval query enriched with scenario metadata, optionally scoped to a project."""
     sector = scenario.get("client_profile", {}).get("buyer_persona", "")
     enriched_query = f"{query} client sector:{sector}"
-    return retrieve_context(enriched_query, top_k=5)
+    
+    filters = {"project_id": project_id} if project_id else None
+    return retrieve_context(enriched_query, filters=filters, top_k=5)
 
 
 def format_context(chunks: list[dict]) -> str:
