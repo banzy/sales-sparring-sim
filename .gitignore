@@ -1,6 +1,10 @@
 # Logs
 logs
 *.log
+package-lock.json
+yarn.lock
+bun.lockb
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
