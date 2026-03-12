@@ -1,4 +1,4 @@
-"""Generates contextual seller response suggestions using RAG + session history."""
+"""Generates contextual seller response suggestions — all context via Qdrant RAG."""
 from __future__ import annotations
 
 import logging
@@ -6,48 +6,102 @@ import logging
 from app.core.llm_client import LLMClient
 from app.modules import rag_retriever
 from app.prompts.suggestion import SUGGESTION_SYSTEM_PROMPT, build_suggestion_context
-from app.storage import session_store
+from app.storage import session_store, vector_store
 
 logger = logging.getLogger(__name__)
 
 _llm = LLMClient()
 
 
-def _build_past_sessions_summary(project_id: str) -> str:
-    """Summarise past session evaluations into a concise text block for the LLM."""
-    sessions = session_store.get_all_sessions(project_id)
+# ---------------------------------------------------------------------------
+# RAG multi-query helpers
+# ---------------------------------------------------------------------------
 
-    # Only keep scored sessions (most recent first, already sorted by store)
-    scored = [s for s in sessions if s.get("overall_score") is not None]
-
-    if not scored:
-        return "No past sessions available. This is the learner's first session."
-
-    parts: list[str] = []
-    # Show up to 5 most recent evaluated sessions
-    for i, session in enumerate(scored[:5], 1):
-        strengths = ", ".join(session.get("strengths", [])[:3]) or "N/A"
-        weaknesses = ", ".join(session.get("weaknesses", [])[:3]) or "N/A"
-        parts.append(
-            f"Session {i} (Score: {session['overall_score']}/100, "
-            f"Objection Handling: {session.get('objection_handling', 'N/A')}/100):\n"
-            f"  Strengths: {strengths}\n"
-            f"  Weaknesses: {weaknesses}"
+def _retrieve_by_type(
+    query: str,
+    project_id: str,
+    doc_type: str,
+    top_k: int = 4,
+) -> str:
+    """
+    Embed `query`, search Qdrant filtered by project_id AND doc_type.
+    Returns formatted text or empty string if nothing found.
+    """
+    try:
+        query_vector = _llm.embed_single(query)
+        chunks = vector_store.search(
+            query_vector,
+            top_k=top_k,
+            filters={"project_id": project_id, "doc_type": doc_type},
         )
+        return rag_retriever.format_context(chunks)
+    except Exception:
+        logger.warning("RAG retrieval failed [%s / %s]", project_id, doc_type, exc_info=True)
+        return ""
 
-    evolution_note = ""
-    if len(scored) >= 2:
-        latest_score = scored[0]["overall_score"]
-        previous_score = scored[1]["overall_score"]
-        if latest_score > previous_score:
-            evolution_note = f"\nTrend: Improving (+{latest_score - previous_score} points from previous session)"
-        elif latest_score < previous_score:
-            evolution_note = f"\nTrend: Declining ({latest_score - previous_score} points from previous session)"
-        else:
-            evolution_note = "\nTrend: Stable (same score as previous session)"
 
-    return "\n\n".join(parts) + evolution_note
+def _retrieve_docs(
+    query: str,
+    project_id: str,
+    top_k: int = 5,
+) -> str:
+    """
+    Retrieve uploaded project documents (no doc_type filter — these are user
+    knowledge files that don't carry the internal doc_type tag).
+    """
+    try:
+        chunks = rag_retriever.build_context_for_scenario(
+            scenario={},   # enriched query already handles sector
+            query=query,
+            project_id=project_id,
+        )
+        return rag_retriever.format_context(chunks)
+    except Exception:
+        logger.warning("RAG doc retrieval failed [%s]", project_id, exc_info=True)
+        return ""
 
+
+def _retrieve_all_context(
+    project_id: str,
+    scenario: dict,
+    last_buyer_msg: str,
+    seller_intent: str,
+) -> dict[str, str]:
+    """
+    Fire multiple targeted RAG queries to retrieve each knowledge dimension.
+    Returns a dict with keys matching the prompt template sections.
+    """
+    sector = scenario.get("generation_context", {}).get("sector", "")
+    client_name = scenario.get("client_profile", {}).get("name", "client")
+
+    # Query strings tuned to each knowledge type
+    company_query   = f"company profile {client_name} sector {sector} buyer persona constraints"
+    objection_query = f"objections and pushback: {last_buyer_msg}"
+    feedback_query  = f"past session performance strengths weaknesses feedback score"
+    progress_query  = f"learning progress evolution focus areas priority weaknesses advice"
+    docs_query      = f"{last_buyer_msg} {seller_intent} {sector}"
+
+    # Parallel retrieval per doc_type
+    company_ctx   = _retrieve_by_type(company_query,   project_id, "scenario_profile",   top_k=3)
+    objection_ctx = _retrieve_by_type(objection_query, project_id, "scenario_objection", top_k=4)
+    constraint_ctx= _retrieve_by_type(company_query,   project_id, "scenario_constraint",top_k=2)
+    feedback_ctx  = _retrieve_by_type(feedback_query,  project_id, "session_feedback",   top_k=5)
+    progress_ctx  = _retrieve_by_type(progress_query,  project_id, "learning_progress",  top_k=3)
+    docs_ctx      = _retrieve_docs(docs_query, project_id, top_k=5)
+
+    return {
+        "company_ctx":    company_ctx,
+        "objection_ctx":  objection_ctx,
+        "constraint_ctx": constraint_ctx,
+        "feedback_ctx":   feedback_ctx,
+        "progress_ctx":   progress_ctx,
+        "docs_ctx":       docs_ctx,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
 
 def suggest_response(
     scenario_id: str,
@@ -55,56 +109,56 @@ def suggest_response(
     conversation_history: list[dict],
 ) -> str:
     """
-    Generate an AI-suggested seller response grounded in full context.
+    Generate an AI-suggested seller response grounded in fully RAG-retrieved context.
 
-    Pulls together:
-      1. The scenario definition (constraints, objections, client profile)
-      2. RAG context from uploaded knowledge documents
-      3. Past session performance data and evolution
-      4. The learner's profile (level, weaknesses)
-      5. The current conversation transcript
+    All knowledge (company info, scenario objections, past coaching feedback,
+    progress trends, and uploaded documents) is retrieved semantically from
+    Qdrant — nothing is injected as raw text from SQLite.
 
     Returns:
         The suggested seller response as plain text.
     """
-    # 1. Load scenario
+    # 1. Load scenario from DB (needed only to build semantic query strings)
     scenario = session_store.get_scenario(scenario_id)
     if not scenario:
         raise ValueError(f"Scenario {scenario_id} not found")
 
-    # 2. Load learner profile
-    profile = session_store.get_project_profile(project_id)
-
-    # 3. Build RAG context from the last buyer message
+    # 2. Identify the last buyer message + rough seller intent for query enrichment
     last_buyer_msg = ""
     for msg in reversed(conversation_history):
         if msg.get("role") == "buyer":
             last_buyer_msg = msg.get("content", "")
             break
 
-    rag_chunks = []
-    rag_formatted = "No knowledge base documents uploaded for this project."
-    if last_buyer_msg:
-        try:
-            rag_chunks = rag_retriever.build_context_for_scenario(
-                scenario=scenario, 
-                query=last_buyer_msg, 
-                project_id=project_id,
-            )
-            rag_formatted = rag_retriever.format_context(rag_chunks)
-        except Exception:
-            logger.warning("RAG retrieval failed, proceeding without vector context", exc_info=True)
+    last_seller_msg = ""
+    for msg in reversed(conversation_history):
+        if msg.get("role") == "seller":
+            last_seller_msg = msg.get("content", "")
+            break
 
-    # 4. Build past-sessions summary
-    past_summary = _build_past_sessions_summary(project_id)
+    seller_intent = last_seller_msg[:200] if last_seller_msg else ""
+
+    # 3. Retrieve ALL context via multi-query RAG (Qdrant only, no raw text)
+    rag_context = _retrieve_all_context(
+        project_id=project_id,
+        scenario=scenario,
+        last_buyer_msg=last_buyer_msg,
+        seller_intent=seller_intent,
+    )
+
+    # 4. Format current conversation
+    conv_text = "\n\n".join(
+        f"[{'BUYER' if m.get('role') == 'buyer' else 'SELLER'}]: {m.get('content', '')}"
+        for m in conversation_history
+    )
 
     # 5. Assemble the full prompt context
     context = build_suggestion_context(
         scenario=scenario,
         conversation_history=conversation_history,
-        rag_context=rag_formatted,
-        past_sessions_summary=past_summary,
-        user_profile=profile,
+        rag_context=rag_context,
+        past_sessions_summary="",   # now retrieved via RAG (feedback_ctx + progress_ctx)
+        user_profile={},            # now retrieved via RAG (progress_ctx)
     )
 
     # 6. Call LLM

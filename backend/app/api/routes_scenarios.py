@@ -7,7 +7,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.core.llm_client import LLMClient, LLMServiceError
 from app.models.schemas import ClientResearchResponse, GenerateClientRequest, GenerateClientResponse
-from app.modules import scenario_builder
+from app.modules import scenario_builder, knowledge_indexer
 from app.storage import session_store
 from app.storage.vector_store import index_chunks
 from app.utils.chunking import prepare_chunks
@@ -135,6 +135,8 @@ def generate_synthetic_client(request: GenerateClientRequest):
             obj["tested"] = False
         
         session_store.save_scenario(scenario["scenario_id"], scenario)
+        # Index scenario knowledge into vector store for RAG-powered suggestions
+        knowledge_indexer.index_scenario(scenario["scenario_id"], scenario)
         return scenario
     except LLMServiceError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e)) from e
@@ -174,6 +176,8 @@ def refresh_client_research(scenario_id: str):
     try:
         updated_scenario = scenario_builder.refresh_client_research_for_scenario(scenario)
         session_store.save_scenario(scenario_id, updated_scenario)
+        # Re-index scenario with fresh research data
+        knowledge_indexer.index_scenario(scenario_id, updated_scenario)
         return {
             "scenario_id": scenario_id,
             "client_research": updated_scenario.get("client_research"),

@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from app.core.llm_client import LLMServiceError
 from app.models.schemas import EvaluateSessionRequest, EvaluateSessionResponse
 from app.api.routes_scenarios import get_scenario
-from app.modules import evaluation_engine
+from app.modules import evaluation_engine, knowledge_indexer
 from app.storage import session_store
 import uuid
 
@@ -44,6 +44,15 @@ def evaluate_session(request: EvaluateSessionRequest):
         # 4. Update adaptive profile
         new_profile = session_store.update_project_profile(request.project_id, eval_result)
         eval_result["next_difficulty"] = new_profile["current_level"]
+
+        # 5. Index evaluation into vector store for RAG-powered suggestions
+        session_number = new_profile.get("sessions_count", 1)
+        knowledge_indexer.index_session_evaluation(
+            project_id=request.project_id,
+            session_id=session_id,
+            session_number=session_number,
+            eval_result=eval_result,
+        )
         
         return eval_result
         
@@ -54,3 +63,4 @@ def evaluate_session(request: EvaluateSessionRequest):
     except Exception as e:
         logger.exception("Unhandled error in evaluate_session")
         raise HTTPException(status_code=500, detail="Unexpected server error.") from e
+
