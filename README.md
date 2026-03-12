@@ -1,8 +1,18 @@
 # Sales Sparring Simulator
 
-Welcome to the Sales Sparring Simulator project! This application is designed to help sales professionals practice and improve their B2B pitches, handle objections, and navigate complex buying constraints through realistic, AI-driven simulations.
+### The Problem
+B2B sales cycles are increasingly complex, requiring account executives to navigate nuanced buyer personas, specific industry constraints, and aggressive multi-stakeholder objections. Traditional sales training relies on static scripts, generic roleplay with peers, or post-mortem deal analysis, which fail to dynamically prepare sellers for the reality of rigorous discovery calls in specific, high-stakes scenarios.
 
-## 🧠 AI Integration & Core Agents
+### The Solution
+The Sales Sparring Simulator is an AI-powered B2B sales roleplay and evaluation engine designed to bridge this gap. It leverages multi-agent LLM systems and Retrieval-Augmented Generation (RAG) to create highly dynamic conversation scenarios based on real-world target client telemetry, allowing sellers to practice against an adversarial AI buyer that acts, thinks, and pushes back like a real prospect.
+
+**System Capabilities:**
+- **Dynamic Adversarial Simulation:** Facilitates real-time, stateful natural language conversations using an adversarial buyer agent that actively tests objection handling and constraints navigation.
+- **Context-Grounded Telemetry:** Integrates directly with search APIs (`Perplexity`) during scenario creation to ground the simulated buyer in accurate firmographics, sector context, and current strategic priorities of the target counterparty.
+- **LLM-as-a-Judge Evaluation:** Employs a secondary evaluator agent to parse complete session transcripts, extracting structured performance data including communication clarity scoring, weakness identification, and objection triggered/handled ratio.
+- **RAG-Driven Copilot:** Utilizes real-time vector semantic search over past session state and client demographics to surface contextual coaching advice inline with the ongoing conversation.
+
+## AI Integration & Core Agents
 
 This application extensively leverages AI to provide a highly dynamic, context-aware sparring environment and actionable feedback.
 
@@ -25,13 +35,13 @@ To ensure all AI responses are highly relevant and personalized, the app uses a 
 ### Agent Communication
 Agents communicate implicitly via the shared persistence layer. The Sparring Agent generates dialogue and internal feedback; the Evaluation Engine processes this to create learning progress metrics; and finally, those metrics are embedded and retrieved by the Suggestion Engine in future sessions to tailor real-time hints.
 
-## 💾 Persistent Architecture
+## Persistent Architecture
 
 The application uses a hybrid dual-database architecture:
 - **Relational DB (SQLite/SQLAlchemy)**: Manages structured, relational data such as User Profiles, Projects, Sessions, and explicit scenario definitions.
 - **Vector DB (Qdrant)**: Manages unstructured, semantic data. It stores embedded chunks of scenario profiles, anticipated objections, session feedback, and aggregated learning progress constraints, enabling fast semantic search and RAG capabilities.
 
-## 🔄 Working Flow and Data Manipulation
+## Working Flow and Data Manipulation
 
 ### Application Data Flow
 This diagram illustrates how data moves through the core pages of the frontend application:
@@ -96,7 +106,7 @@ This diagram illustrates how AI agents interact with the databases and each othe
 
 ---
 
-## 💻 Development & Setup
+## Development & Setup
 
 ### How can I edit this code?
 
@@ -112,16 +122,13 @@ Follow these steps:
 
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+git clone https://github.com/banzy/sales-sparring-sim
 
 # Step 3: Install the necessary dependencies.
-npm i
+bun install
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev:all
+bun dev:all
 ```
 
 **Edit a file directly in GitHub**
@@ -154,9 +161,3 @@ This project uses **Zustand** for centralized state management on the frontend. 
 - **Type-Safe**: Full TypeScript support
 - **DevTools**: Redux DevTools integration for debugging
 - **Performance**: Optimized re-renders with selective subscriptions
-
-#### Documentation
-- `ZUSTAND_MIGRATION.md` - Detailed migration guide
-- `STATE_FLOW.md` - Architecture and data flow
-- `QUICK_REFERENCE.md` - Quick reference for common patterns
-- `BEFORE_AFTER_COMPARISON.md` - Comparison with previous approach
