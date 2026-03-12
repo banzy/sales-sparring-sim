@@ -23,6 +23,8 @@ class Session(Base):
     project_id = Column(String, index=True)
     scenario_id = Column(String, index=True)
     transcript_json = Column(Text)
+    # JSON-encoded list of objection IDs that were explicitly triggered/completed
+    completed_objections_json = Column(Text, default="[]")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -449,6 +451,25 @@ def save_session(session_id: str, project_id: str, scenario_id: str, transcript:
             project_id=project_id,
             scenario_id=scenario_id,
             transcript_json=json.dumps(transcript),
+            # For now we derive completed objections from the transcript structure itself,
+            # looking for any messages that carry an `objections_triggered` array.
+            completed_objections_json=json.dumps(
+                sorted(
+                    {
+                        obj_id
+                        for turn in transcript
+                        for obj_id in (
+                            [
+                                o.get("id")
+                                for o in (turn.get("objections_triggered") or [])
+                                if isinstance(o, dict) and o.get("id")
+                            ]
+                            if isinstance(turn, dict)
+                            else []
+                        )
+                    }
+                )
+            ),
         )
         db.merge(record)
         db.commit()
@@ -542,6 +563,10 @@ def get_all_sessions(project_id: str | None = None) -> list[dict]:
         for session in sessions:
             transcript = _normalize_transcript(session.transcript_json)
             evaluation_status = _build_evaluation_status(transcript)
+            try:
+                completed_objections: list[str] = json.loads(session.completed_objections_json or "[]")
+            except json.JSONDecodeError:
+                completed_objections = []
             score = (
                 db.query(SessionScore)
                 .filter_by(session_id=session.id)
@@ -552,7 +577,7 @@ def get_all_sessions(project_id: str | None = None) -> list[dict]:
                 {
                     "id": session.id,
                     "project_id": session.project_id,
-                    "scenario_id": session.scenario_id,
+                        "scenario_id": session.scenario_id,
                     "scenario_name": scenario_names.get(session.scenario_id),
                     "created_at": session.created_at.isoformat() if session.created_at else None,
                     **evaluation_status,
@@ -563,6 +588,7 @@ def get_all_sessions(project_id: str | None = None) -> list[dict]:
                     "groundedness": score.groundedness if score else None,
                     "strengths": _decode_json_list(score.strengths_json) if score else [],
                     "weaknesses": _decode_json_list(score.weaknesses_json) if score else [],
+                    "completed_objections": completed_objections,
                 }
             )
         return results
@@ -580,6 +606,10 @@ def get_session_detail(session_id: str) -> dict | None:
 
         transcript = _normalize_transcript(session.transcript_json)
         evaluation_status = _build_evaluation_status(transcript)
+        try:
+            completed_objections: list[str] = json.loads(session.completed_objections_json or "[]")
+        except json.JSONDecodeError:
+            completed_objections = []
         score = (
             db.query(SessionScore)
             .filter_by(session_id=session_id)
@@ -602,6 +632,7 @@ def get_session_detail(session_id: str) -> dict | None:
             "groundedness": score.groundedness if score else None,
             "strengths": _decode_json_list(score.strengths_json) if score else [],
             "weaknesses": _decode_json_list(score.weaknesses_json) if score else [],
+            "completed_objections": completed_objections,
         }
     finally:
         db.close()

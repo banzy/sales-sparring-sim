@@ -16,6 +16,11 @@ export interface SessionSummary {
     groundedness?: number | null;
     strengths: string[];
     weaknesses: string[];
+    /**
+     * Objection IDs that were completed in this saved session.
+     * Comes from backend `completed_objections` field.
+     */
+    completed_objections?: string[];
 }
 
 export interface SessionDetail extends SessionSummary {

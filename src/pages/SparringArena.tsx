@@ -120,6 +120,21 @@ export default function SparringArena() {
     [pastSessions, hasLiveProgress],
   );
 
+  // Derive cumulative objection progress across all completed sessions for this scenario.
+  const cumulativeCompletedObjections = useMemo(() => {
+    if (!scenarioId) return new Set<string>();
+
+    const ids = new Set<string>();
+    pastSessions.forEach(session => {
+      if (session.scenario_id === scenarioId || session.project_id === scenarioId) {
+        (session.completed_objections ?? []).forEach(id => {
+          if (id) ids.add(id);
+        });
+      }
+    });
+    return ids;
+  }, [pastSessions, scenarioId]);
+
   // Calculate which messages to show
   const displayedMessages = useMemo(() => {
     if (isPastSessionView) {
@@ -596,18 +611,22 @@ export default function SparringArena() {
               Active Objections
             </p>
             <div className="space-y-2.5">
-              {sparringSession.objectionChecklist.map((obj) => (
-                <div key={obj.id} className="flex items-center gap-2.5 text-xs">
-                  {obj.tested ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
-                  ) : (
-                    <div className="h-3.5 w-3.5 rounded-full border border-hud-foreground/30 shrink-0" />
-                  )}
-                  <span className={obj.tested ? "text-hud-foreground/40 line-through" : "text-hud-foreground"}>
-                    {obj.title}
-                  </span>
-                </div>
-              ))}
+              {sparringSession.objectionChecklist.map((obj) => {
+                const isCompletedFromHistory = cumulativeCompletedObjections.has(obj.id);
+                const isTested = obj.tested || isCompletedFromHistory;
+                return (
+                  <div key={obj.id} className="flex items-center gap-2.5 text-xs">
+                    {isTested ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
+                    ) : (
+                      <div className="h-3.5 w-3.5 rounded-full border border-hud-foreground/30 shrink-0" />
+                    )}
+                    <span className={isTested ? "text-hud-foreground/40 line-through" : "text-hud-foreground"}>
+                      {obj.title}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
