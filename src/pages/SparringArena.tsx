@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, PauseCircle, History, RotateCcw } from "lucide-react";
+import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, PauseCircle, History, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,7 @@ export default function SparringArena() {
   const [selectedPastSessionId, setSelectedPastSessionId] = useState<string | null>(null);
   const [pastSessionMessages, setPastSessionMessages] = useState<Message[] | null>(null);
   const [isPastSessionLoading, setIsPastSessionLoading] = useState(false);
+  const [isLoadingAiSuggestion, setIsLoadingAiSuggestion] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -294,6 +295,15 @@ export default function SparringArena() {
     }
   };
 
+  const handleAiSuggest = async () => {
+    if (isLoadingAiSuggestion) return;
+    setIsLoadingAiSuggestion(true);
+
+    window.setTimeout(() => {
+      setIsLoadingAiSuggestion(false);
+    }, 1000);
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -463,6 +473,18 @@ export default function SparringArena() {
               <>
                 {inputMode === "text" && (
                   <>
+                    <button
+                      onClick={handleAiSuggest}
+                      disabled={isLoadingAiSuggestion}
+                      title="Suggest AI response"
+                      className="shrink-0 h-11 w-11 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-secondary/80 transition-colors shadow-sm border border-border/50 disabled:opacity-60 disabled:pointer-events-none"
+                    >
+                      {isLoadingAiSuggestion ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-5 w-5" />
+                      )}
+                    </button>
                     <Input
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
