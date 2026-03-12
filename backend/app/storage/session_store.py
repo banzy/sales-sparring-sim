@@ -653,6 +653,59 @@ def get_db_diagnostics() -> dict:
     return diagnostics
 
 
+def get_global_performance(project_id: str) -> dict | None:
+    """
+    Aggregate performance across all scored sessions for a project.
+
+    Only sessions that have a persisted score are included, which naturally
+    discards very short or unevaluated sessions.
+    """
+    db = _make_session()
+    try:
+        scores = (
+            db.query(SessionScore)
+            .filter_by(project_id=project_id)
+            .order_by(SessionScore.created_at.asc())
+            .all()
+        )
+        if not scores:
+            return None
+
+        count = 0
+        overall_sum = 0
+        objection_sum = 0
+        clarity_sum = 0
+        strengths: list[str] = []
+        weaknesses: list[str] = []
+
+        for score in scores:
+            if score.overall_score is None:
+                continue
+            count += 1
+            overall_sum += score.overall_score or 0
+            objection_sum += score.objection_handling or 0
+            clarity_sum += score.communication_clarity or 0
+            strengths.extend(_decode_json_list(score.strengths_json))
+            weaknesses.extend(_decode_json_list(score.weaknesses_json))
+
+        if count == 0:
+            return None
+
+        strengths = strengths[-10:]
+        weaknesses = weaknesses[-10:]
+
+        return {
+            "sessions_count": count,
+            "overall_score": overall_sum / count,
+            "objection_handling": objection_sum / count,
+            "communication_clarity": clarity_sum / count,
+            "strengths": strengths,
+            "weaknesses": weaknesses,
+        }
+    finally:
+        db.close()
+
+
 def save_project_documents(project_id: str, docs: list[dict]) -> list[dict]:
     """
     Persist uploaded document metadata for a project.

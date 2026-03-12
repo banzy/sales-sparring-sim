@@ -1,7 +1,11 @@
 import logging
 from fastapi import APIRouter, HTTPException
 from app.core.llm_client import LLMServiceError
-from app.models.schemas import EvaluateSessionRequest, EvaluateSessionResponse
+from app.models.schemas import (
+    EvaluateSessionRequest,
+    EvaluateSessionResponse,
+    GlobalPerformanceResponse,
+)
 from app.api.routes_scenarios import get_scenario
 from app.modules import evaluation_engine, knowledge_indexer
 from app.storage import session_store
@@ -63,4 +67,17 @@ def evaluate_session(request: EvaluateSessionRequest):
     except Exception as e:
         logger.exception("Unhandled error in evaluate_session")
         raise HTTPException(status_code=500, detail="Unexpected server error.") from e
+
+
+@router.get("/global_performance", response_model=GlobalPerformanceResponse)
+def get_global_performance(project_id: str):
+    """
+    Return aggregated performance across all scored sessions for a project.
+    Short or unevaluated sessions are implicitly discarded because they do
+    not have persisted scores.
+    """
+    stats = session_store.get_global_performance(project_id)
+    if not stats:
+        raise HTTPException(status_code=404, detail="No scored sessions found for project")
+    return stats
 

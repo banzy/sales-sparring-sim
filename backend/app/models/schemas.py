@@ -138,3 +138,12 @@ class EvaluateSessionResponse(BaseModel):
     evolution_analysis: str
     next_difficulty: str
     next_focus_areas: list[str] = []
+
+
+class GlobalPerformanceResponse(BaseModel):
+    sessions_count: int
+    overall_score: float
+    objection_handling: float
+    communication_clarity: float
+    strengths: list[str]
+    weaknesses: list[str]

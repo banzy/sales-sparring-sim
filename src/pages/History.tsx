@@ -76,7 +76,10 @@ function SessionCard({
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-mono text-muted-foreground" style={{ color: 'rgba(88, 92, 101, 1)' }}>#{shortId(session.id)}</span>
         {session.evaluation_insufficient ? (
-          <Badge variant="outline" className="text-[10px] rounded-lg uppercase tracking-wide border-warning/40 text-warning">
+          <Badge
+            variant="outline"
+            className="text-[10px] rounded-lg uppercase tracking-wide border-warning/40 text-warning bg-orange-50"
+          >
             Too Short
           </Badge>
         ) : (

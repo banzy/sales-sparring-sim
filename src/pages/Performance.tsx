@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -15,13 +15,22 @@ import { Progress } from '@/components/ui/progress';
 import { useAppStore } from '@/store';
 import type { SparringSession } from '@/store';
 import { api } from '@/lib/api';
-import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function Performance() {
   const { performance, sparringSession, setPerformance } = useAppStore();
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [globalPerformance, setGlobalPerformance] = useState<{
+    sessionsCount: number;
+    overallScore: number;
+    objectionHandling: number;
+    communicationClarity: number;
+    strengths: string[];
+    weaknesses: string[];
+  } | null>(null);
   const scenarioId = useAppStore((state) => state.contextSetup.scenarioId);
 
   const hasEvaluationData =
@@ -97,6 +106,25 @@ export default function Performance() {
     shouldEvaluate,
   ]);
 
+  useEffect(() => {
+    async function loadGlobal() {
+      if (hasEvaluationData || !scenarioId || hasMeaningfulTranscript) return;
+      setIsLoadingGlobal(true);
+      setGlobalError(null);
+      try {
+        const result = await api.getGlobalPerformance(scenarioId);
+        setGlobalPerformance(result);
+      } catch (err) {
+        console.error('Global performance load failed:', err);
+        setGlobalError('Could not load past performance.');
+      } finally {
+        setIsLoadingGlobal(false);
+      }
+    }
+
+    loadGlobal();
+  }, [hasEvaluationData, hasMeaningfulTranscript, scenarioId]);
+
   if (isEvaluating || shouldEvaluate) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
@@ -131,15 +159,21 @@ export default function Performance() {
     );
   }
 
-  if (!hasEvaluationData) {
+  if (!hasEvaluationData && !globalPerformance) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold">No Performance Data</h2>
+          <h2 className="text-xl font-semibold">
+            {isLoadingGlobal ? 'Loading Performance...' : 'No Performance Data'}
+          </h2>
           <p className="text-muted-foreground text-sm max-w-sm">
-            Complete a session in the Sparring Arena to see your performance and
-            history.
+            {isLoadingGlobal
+              ? 'Fetching your past demo sessions.'
+              : 'Complete a session in the Sparring Arena to see your performance and history.'}
           </p>
+          {globalError && (
+            <p className="text-xs text-destructive mt-2">{globalError}</p>
+          )}
         </div>
       </div>
     );
@@ -148,13 +182,27 @@ export default function Performance() {
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Sessions Debrief</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {hasEvaluationData ? 'Session Debrief' : 'Global Performance'}
+        </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Performance analysis from your sparring session with{' '}
-          <span className="font-medium text-foreground">
-            {sparringSession.currentPersona.name}
-          </span>
-          .
+          {hasEvaluationData ? (
+            <>
+              Performance analysis from your sparring session with{' '}
+              <span className="font-medium text-foreground">
+                {sparringSession.currentPersona.name}
+              </span>
+              .
+            </>
+          ) : globalPerformance ? (
+            <>
+              Aggregated performance across{' '}
+              <span className="font-medium text-foreground">
+                {globalPerformance.sessionsCount}
+              </span>{' '}
+              past demo sessions.
+            </>
+          ) : null}
         </p>
       </div>
 
@@ -162,13 +210,19 @@ export default function Performance() {
         <Card className="glass-card">
           <CardContent className="pt-6 text-center">
             <div className="text-5xl font-bold font-mono text-primary">
-              {performance.overallScore}
+              {hasEvaluationData
+                ? performance.overallScore
+                : globalPerformance?.overallScore ?? 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">
               Overall Score
             </p>
             <Progress
-              value={performance.overallScore}
+              value={
+                hasEvaluationData
+                  ? performance.overallScore
+                  : globalPerformance?.overallScore ?? 0
+              }
               className="mt-4 h-1.5 rounded-full"
             />
           </CardContent>
@@ -177,13 +231,19 @@ export default function Performance() {
         <Card className="glass-card">
           <CardContent className="pt-6 text-center">
             <div className="text-5xl font-bold font-mono text-foreground">
-              {performance.objectionHandling}
+              {hasEvaluationData
+                ? performance.objectionHandling
+                : globalPerformance?.objectionHandling ?? 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">
               Objection Handling
             </p>
             <Progress
-              value={performance.objectionHandling}
+              value={
+                hasEvaluationData
+                  ? performance.objectionHandling
+                  : globalPerformance?.objectionHandling ?? 0
+              }
               className="mt-4 h-1.5 rounded-full"
             />
           </CardContent>
@@ -192,13 +252,19 @@ export default function Performance() {
         <Card className="glass-card">
           <CardContent className="pt-6 text-center">
             <div className="text-5xl font-bold font-mono text-foreground">
-              {performance.communicationClarity}
+              {hasEvaluationData
+                ? performance.communicationClarity
+                : globalPerformance?.communicationClarity ?? 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">
               Communication Clarity
             </p>
             <Progress
-              value={performance.communicationClarity}
+              value={
+                hasEvaluationData
+                  ? performance.communicationClarity
+                  : globalPerformance?.communicationClarity ?? 0
+              }
               className="mt-4 h-1.5 rounded-full"
             />
           </CardContent>
@@ -218,7 +284,10 @@ export default function Performance() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {performance.strengths.map((s, i) => (
+            {(hasEvaluationData
+              ? performance.strengths
+              : globalPerformance?.strengths ?? []
+            ).map((s, i) => (
               <div key={i} className="flex items-start gap-2.5 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
                 <span className="text-muted-foreground">{s}</span>
@@ -239,7 +308,10 @@ export default function Performance() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {performance.weaknesses.map((w, i) => (
+            {(hasEvaluationData
+              ? performance.weaknesses
+              : globalPerformance?.weaknesses ?? []
+            ).map((w, i) => (
               <div key={i} className="flex items-start gap-2.5 text-sm">
                 <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                 <span className="text-muted-foreground">{w}</span>
@@ -249,80 +321,84 @@ export default function Performance() {
         </Card>
       </div>
 
-      <Card className="glass-card !bg-yellow-400">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
-              <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-            <CardTitle className="text-xs font-extrabold uppercase tracking-wide text-[rgba(65,71,83,1)]">
-              AI Coach Feedback
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="text-sm text-[rgba(65,71,83,1)] leading-relaxed">
-          <p>{performance.aiFeedback}</p>
-        </CardContent>
-      </Card>
-
-      {performance.evolutionAnalysis && (
-        <Card className="glass-card border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-primary/20 flex items-center justify-center">
-                <History className="h-3.5 w-3.5 text-primary" />
+      {hasEvaluationData && (
+        <>
+          <Card className="glass-card !bg-yellow-400">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center">
+                  <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <CardTitle className="text-xs font-extrabold uppercase tracking-wide text-[rgba(65,71,83,1)]">
+                  AI Coach Feedback
+                </CardTitle>
               </div>
-              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-foreground">
-                Evolution & History
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="text-sm text-foreground leading-relaxed font-medium">
-            <p>{performance.evolutionAnalysis}</p>
-          </CardContent>
-        </Card>
-      )}
+            </CardHeader>
+            <CardContent className="text-sm text-[rgba(65,71,83,1)] leading-relaxed">
+              <p>{performance.aiFeedback}</p>
+            </CardContent>
+          </Card>
 
-      <Alert className="border-border bg-muted/50 rounded-2xl">
-        <AlertCircle className="h-4 w-4 text-primary" />
-        <AlertTitle className="text-sm font-semibold">
-          Agent Memory Updated
-        </AlertTitle>
-        <AlertDescription className="text-sm text-muted-foreground mt-1">
-          Next session difficulty will be increased to{' '}
-          <Badge
-            variant="secondary"
-            className="font-mono text-[10px] mx-1 rounded-lg"
-          >
-            {sparringSession.difficulty === 'beginner'
-              ? 'Intermediate'
-              : sparringSession.difficulty === 'intermediate'
-                ? 'Advanced'
-                : 'Adversarial'}
-          </Badge>
-          . The agent will push harder on{' '}
-          {performance.nextFocusAreas?.length > 0 ? (
-            performance.nextFocusAreas.map((area, i) => (
-              <span key={area}>
-                <span className="font-medium text-foreground">{area}</span>
-                {i < performance.nextFocusAreas.length - 1 ? ' and ' : ''}
-              </span>
-            ))
-          ) : (
-            <>
-              <span className="font-medium text-foreground">
-                pricing objections
-              </span>{' '}
-              and
-              <span className="font-medium text-foreground">
-                {' '}
-                ROI quantification
-              </span>
-            </>
+          {performance.evolutionAnalysis && (
+            <Card className="glass-card border-primary/20 bg-primary/5">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-xl bg-primary/20 flex items-center justify-center">
+                    <History className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                    Evolution & History
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-foreground leading-relaxed font-medium">
+                <p>{performance.evolutionAnalysis}</p>
+              </CardContent>
+            </Card>
           )}
-          .
-        </AlertDescription>
-      </Alert>
+
+          <Alert className="border-border bg-muted/50 rounded-2xl">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertTitle className="text-sm font-semibold">
+              Agent Memory Updated
+            </AlertTitle>
+            <AlertDescription className="text-sm text-muted-foreground mt-1">
+              Next session difficulty will be increased to{' '}
+              <Badge
+                variant="secondary"
+                className="font-mono text-[10px] mx-1 rounded-lg"
+              >
+                {sparringSession.difficulty === 'beginner'
+                  ? 'Intermediate'
+                  : sparringSession.difficulty === 'intermediate'
+                    ? 'Advanced'
+                    : 'Adversarial'}
+              </Badge>
+              . The agent will push harder on{' '}
+              {performance.nextFocusAreas?.length > 0 ? (
+                performance.nextFocusAreas.map((area, i) => (
+                  <span key={area}>
+                    <span className="font-medium text-foreground">{area}</span>
+                    {i < performance.nextFocusAreas.length - 1 ? ' and ' : ''}
+                  </span>
+                ))
+              ) : (
+                <>
+                  <span className="font-medium text-foreground">
+                    pricing objections
+                  </span>{' '}
+                  and
+                  <span className="font-medium text-foreground">
+                    {' '}
+                    ROI quantification
+                  </span>
+                </>
+              )}
+              .
+            </AlertDescription>
+          </Alert>
+        </>
+      )}
     </div>
   );
 }

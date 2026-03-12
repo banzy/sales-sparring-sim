@@ -20,6 +20,15 @@ export interface SessionDetail extends SessionSummary {
     transcript: Array<{ role: string; content: string }>;
 }
 
+export interface GlobalPerformance {
+    sessionsCount: number;
+    overallScore: number;
+    objectionHandling: number;
+    communicationClarity: number;
+    strengths: string[];
+    weaknesses: string[];
+}
+
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") || "/api";
 
 function getErrorMessage(fallback: string, detail: any): string {
@@ -233,6 +242,23 @@ export const api = {
             nextDifficulty: data.next_difficulty,
             nextFocusAreas: data.next_focus_areas || [],
         } as PerformanceData;
+    },
+
+    async getGlobalPerformance(projectId: string): Promise<GlobalPerformance> {
+        const search = `?project_id=${encodeURIComponent(projectId)}`;
+        const res = await fetch(`${API_BASE}/global_performance${search}`);
+        if (!res.ok) {
+            throw new Error(`API error: ${res.statusText}`);
+        }
+        const data = await res.json();
+        return {
+            sessionsCount: data.sessions_count,
+            overallScore: data.overall_score,
+            objectionHandling: data.objection_handling,
+            communicationClarity: data.communication_clarity,
+            strengths: data.strengths ?? [],
+            weaknesses: data.weaknesses ?? [],
+        };
     },
 
     /** List all past sessions for the default user */
