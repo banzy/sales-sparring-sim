@@ -28,7 +28,7 @@ export function DashboardLayout() {
                 <span className="text-sm font-semibold tracking-tight">{APP_NAME}</span>
                 <span className="text-muted-foreground">·</span>
                 <span className="text-sm text-muted-foreground truncate">
-                  {activeProjectName}
+                  Project: {activeProjectName}
                 </span>
               </div>
             </div>

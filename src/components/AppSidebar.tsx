@@ -1,7 +1,14 @@
-import { Settings, FolderOpen, FileText, Swords, BarChart3, ClockIcon } from "lucide-react";
-import ciklumLogo from "@/assets/ciklum-logo.png";
-import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import {
+  Settings,
+  FolderOpen,
+  FileText,
+  Swords,
+  BarChart3,
+  ClockIcon,
+} from 'lucide-react';
+import ssaLogo from '@/assets/ssa.png';
+import { NavLink } from '@/components/NavLink';
+import { useLocation } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -14,27 +21,27 @@ import {
   SidebarHeader,
   SidebarFooter,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
 const navItems = [
-  { title: "Context Setup", url: "/", icon: Settings },
-  { title: "Projects", url: "/projects", icon: FolderOpen },
-  { title: "Briefing & Materials", url: "/briefing", icon: FileText },
-  { title: "Sparring Arena", url: "/arena", icon: Swords },
-  { title: "Performance", url: "/performance", icon: BarChart3 },
-  { title: "Session's History", url: "/history", icon: ClockIcon },
+  { title: 'Context Setup', url: '/', icon: Settings },
+  { title: 'Projects', url: '/projects', icon: FolderOpen },
+  { title: 'Briefing & Materials', url: '/briefing', icon: FileText },
+  { title: 'Sparring Arena', url: '/arena', icon: Swords },
+  { title: 'Performance', url: '/performance', icon: BarChart3 },
+  { title: "Session's History", url: '/history', icon: ClockIcon },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const collapsed = state === 'collapsed';
   const location = useLocation();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="px-4 py-5 bg-white">
         <div className="flex items-center gap-3">
-          <img src={ciklumLogo} alt="Ciklum" className="h-10 object-contain" />
+          <img src={ssaLogo} alt="Ciklum" className="h-10 object-contain" />
         </div>
       </SidebarHeader>
 
@@ -56,7 +63,9 @@ export function AppSidebar() {
                     >
                       <div className="flex items-center gap-3">
                         <item.icon className="h-4 w-4 text-muted-foreground" />
-                        {!collapsed && <span className="text-sm">{item.title}</span>}
+                        {!collapsed && (
+                          <span className="text-sm">{item.title}</span>
+                        )}
                       </div>
                     </NavLink>
                   </SidebarMenuButton>
@@ -69,7 +78,9 @@ export function AppSidebar() {
 
       <SidebarFooter className="px-4 py-4">
         {!collapsed && (
-          <p className="text-[10px] text-muted-foreground/50 font-mono">v1.0 · Adaptive Engine</p>
+          <p className="text-[10px] text-muted-foreground/50 font-mono">
+            v1.0 · Adaptive Engine
+          </p>
         )}
       </SidebarFooter>
     </Sidebar>

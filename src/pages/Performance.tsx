@@ -168,6 +168,35 @@ export default function Performance() {
     return (val / 10).toFixed(1);
   }
 
+  function getScoreColors(value: number) {
+    const clamped = Math.max(0, Math.min(100, value));
+    const score10 = clamped / 10; // 0–10 scale
+
+    // 0 → dark red, 3 → bright red (no hue shift yet)
+    if (score10 <= 3) {
+      const t = score10 / 3; // 0–1
+      const lightText = 35 + t * (60 - 35); // 35% → 60%
+      const lightTrack = 30 + t * (55 - 30); // 30% → 55%
+      const hue = 0; // pure red
+
+      return {
+        text: `hsl(${hue} 80% ${lightText}%)`,
+        track: `hsl(${hue} 80% ${lightTrack}%)`,
+      };
+    }
+
+    // Above 3, gradually move hue from red → green
+    const t = (score10 - 3) / 7; // 0–1 for 3–10
+    const hue = 0 + t * 120; // 0 (red) → 120 (green)
+    const lightText = 60;
+    const lightTrack = 55;
+
+    return {
+      text: `hsl(${hue} 80% ${lightText}%)`,
+      track: `hsl(${hue} 80% ${lightTrack}%)`,
+    };
+  }
+
   const scores = hasEvaluationData
     ? {
         clarity: performance.clarity || performance.communicationClarity || 0,
@@ -184,13 +213,13 @@ export default function Performance() {
         overall: globalPerformance?.overallScore ?? 0,
       };
 
-  type ScoreMetric = { label: string; value: number; color: string; trackColor: string };
+  type ScoreMetric = { label: string; value: number };
 
   const scoreMetrics: ScoreMetric[] = [
-    { label: 'Clarity',            value: scores.clarity,           color: 'text-sky-400',     trackColor: 'bg-sky-400' },
-    { label: 'Relevance',          value: scores.relevance,         color: 'text-violet-400',  trackColor: 'bg-violet-400' },
-    { label: 'Groundedness',       value: scores.groundedness,      color: 'text-emerald-400', trackColor: 'bg-emerald-400' },
-    { label: 'Objection Handling', value: scores.objectionHandling, color: 'text-amber-400',   trackColor: 'bg-amber-400' },
+    { label: 'Clarity',            value: scores.clarity },
+    { label: 'Relevance',          value: scores.relevance },
+    { label: 'Groundedness',       value: scores.groundedness },
+    { label: 'Objection Handling', value: scores.objectionHandling },
   ];
 
   return (
@@ -230,40 +259,60 @@ export default function Performance() {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
             {/* Individual dimension metrics */}
-            {scoreMetrics.map((m) => (
-              <div key={m.label} className="flex flex-col gap-2">
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-3xl font-bold font-mono ${m.color}`}>
-                    {toTen(m.value)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">/10</span>
+            {scoreMetrics.map((m) => {
+              const colors = getScoreColors(m.value);
+              return (
+                <div key={m.label} className="flex flex-col gap-2">
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className="text-3xl font-bold font-mono"
+                      style={{ color: colors.text }}
+                    >
+                      {toTen(m.value)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">/10</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-tight">{m.label}</p>
+                  <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${m.value}%`,
+                        backgroundColor: colors.track,
+                      }}
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground leading-tight">{m.label}</p>
-                <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${m.trackColor} transition-all duration-700`}
-                    style={{ width: `${m.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Overall – visually separated and highlighted */}
-            <div className="flex flex-col gap-2 sm:border-l sm:border-border sm:pl-4">
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold font-mono text-primary">
-                  {toTen(scores.overall)}
-                </span>
-                <span className="text-xs text-muted-foreground">/10</span>
-              </div>
-              <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Overall</p>
-              <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-700"
-                  style={{ width: `${scores.overall}%` }}
-                />
-              </div>
-            </div>
+            {(() => {
+              const overallColors = getScoreColors(scores.overall);
+              return (
+                <div className="flex flex-col gap-2 sm:border-l sm:border-border sm:pl-4">
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className="text-3xl font-bold font-mono"
+                      style={{ color: overallColors.text }}
+                    >
+                      {toTen(scores.overall)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">/10</span>
+                  </div>
+                  <p className="text-xs font-extrabold text-foreground uppercase tracking-wide">Overall</p>
+                  <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${scores.overall}%`,
+                        backgroundColor: overallColors.track,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </CardContent>
       </Card>
