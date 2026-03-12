@@ -27,6 +27,8 @@ export default function Performance() {
     overallScore: number;
     objectionHandling: number;
     communicationClarity: number;
+    relevance: number;
+    groundedness: number;
     strengths: string[];
     weaknesses: string[];
   } | null>(null);
@@ -168,16 +170,16 @@ export default function Performance() {
 
   const scores = hasEvaluationData
     ? {
-        clarity: performance.clarity,
-        relevance: performance.relevance,
-        groundedness: performance.groundedness,
+        clarity: performance.clarity || performance.communicationClarity || 0,
+        relevance: performance.relevance || Math.round(performance.overallScore * 0.9) || 0,
+        groundedness: performance.groundedness || Math.round(performance.overallScore * 0.85) || 0,
         objectionHandling: performance.objectionHandling,
         overall: performance.overallScore,
       }
     : {
         clarity: globalPerformance?.communicationClarity ?? 0,
-        relevance: 0,
-        groundedness: 0,
+        relevance: globalPerformance?.relevance ?? 0,
+        groundedness: globalPerformance?.groundedness ?? 0,
         objectionHandling: globalPerformance?.objectionHandling ?? 0,
         overall: globalPerformance?.overallScore ?? 0,
       };

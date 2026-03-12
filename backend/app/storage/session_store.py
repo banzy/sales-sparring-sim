@@ -35,6 +35,8 @@ class SessionScore(Base):
     overall_score = Column(Integer)
     objection_handling = Column(Integer)
     communication_clarity = Column(Integer)
+    relevance = Column(Integer)
+    groundedness = Column(Integer)
     strengths_json = Column(Text)
     weaknesses_json = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -198,6 +200,12 @@ def _ensure_project_id_columns(engine: Engine) -> None:
         if "strengths_json" not in score_columns:
             conn.execute(text("ALTER TABLE session_scores ADD COLUMN strengths_json TEXT DEFAULT '[]'"))
             score_columns = _table_columns(conn, "session_scores")
+        if "relevance" not in score_columns:
+            conn.execute(text("ALTER TABLE session_scores ADD COLUMN relevance INTEGER"))
+            score_columns = _table_columns(conn, "session_scores")
+        if "groundedness" not in score_columns:
+            conn.execute(text("ALTER TABLE session_scores ADD COLUMN groundedness INTEGER"))
+            score_columns = _table_columns(conn, "session_scores")
 
         profile_columns = _table_columns(conn, "sparring_profiles")
         if "project_id" not in profile_columns and "user_id" in profile_columns:
@@ -333,6 +341,8 @@ def _ensure_project_id_columns(engine: Engine) -> None:
                         overall_score INTEGER,
                         objection_handling INTEGER,
                         communication_clarity INTEGER,
+                        relevance INTEGER,
+                        groundedness INTEGER,
                         strengths_json TEXT,
                         weaknesses_json TEXT,
                         created_at DATETIME
@@ -350,6 +360,8 @@ def _ensure_project_id_columns(engine: Engine) -> None:
                         overall_score,
                         objection_handling,
                         communication_clarity,
+                        relevance,
+                        groundedness,
                         strengths_json,
                         weaknesses_json,
                         created_at
@@ -365,6 +377,8 @@ def _ensure_project_id_columns(engine: Engine) -> None:
                         overall_score,
                         objection_handling,
                         communication_clarity,
+                        NULL,
+                        NULL,
                         COALESCE(strengths_json, '[]'),
                         weaknesses_json,
                         created_at
@@ -445,12 +459,22 @@ def save_session(session_id: str, project_id: str, scenario_id: str, transcript:
 def save_score(session_id: str, project_id: str, score_data: dict) -> None:
     db = _make_session()
     try:
+        breakdown = score_data.get("score_breakdown") or {}
+        relevance = score_data.get("relevance")
+        if relevance is None and breakdown.get("relevance"):
+            relevance = int(breakdown["relevance"]) * 10
+        groundedness = score_data.get("groundedness")
+        if groundedness is None and breakdown.get("groundedness"):
+            groundedness = int(breakdown["groundedness"]) * 10
+
         record = SessionScore(
             session_id=session_id,
             project_id=project_id,
             overall_score=score_data.get("overall_score", 0),
             objection_handling=score_data.get("objection_handling", 0),
             communication_clarity=score_data.get("communication_clarity", 0),
+            relevance=relevance,
+            groundedness=groundedness,
             strengths_json=json.dumps(score_data.get("strengths", [])),
             weaknesses_json=json.dumps(score_data.get("weaknesses", [])),
         )
@@ -535,6 +559,8 @@ def get_all_sessions(project_id: str | None = None) -> list[dict]:
                     "overall_score": score.overall_score if score else None,
                     "objection_handling": score.objection_handling if score else None,
                     "communication_clarity": score.communication_clarity if score else None,
+                    "relevance": score.relevance if score else None,
+                    "groundedness": score.groundedness if score else None,
                     "strengths": _decode_json_list(score.strengths_json) if score else [],
                     "weaknesses": _decode_json_list(score.weaknesses_json) if score else [],
                 }
@@ -572,6 +598,8 @@ def get_session_detail(session_id: str) -> dict | None:
             "overall_score": score.overall_score if score else None,
             "objection_handling": score.objection_handling if score else None,
             "communication_clarity": score.communication_clarity if score else None,
+            "relevance": score.relevance if score else None,
+            "groundedness": score.groundedness if score else None,
             "strengths": _decode_json_list(score.strengths_json) if score else [],
             "weaknesses": _decode_json_list(score.weaknesses_json) if score else [],
         }
@@ -675,6 +703,8 @@ def get_global_performance(project_id: str) -> dict | None:
         overall_sum = 0
         objection_sum = 0
         clarity_sum = 0
+        relevance_sum = 0
+        groundedness_sum = 0
         strengths: list[str] = []
         weaknesses: list[str] = []
 
@@ -685,6 +715,8 @@ def get_global_performance(project_id: str) -> dict | None:
             overall_sum += score.overall_score or 0
             objection_sum += score.objection_handling or 0
             clarity_sum += score.communication_clarity or 0
+            relevance_sum += score.relevance or 0
+            groundedness_sum += score.groundedness or 0
             strengths.extend(_decode_json_list(score.strengths_json))
             weaknesses.extend(_decode_json_list(score.weaknesses_json))
 
@@ -699,6 +731,8 @@ def get_global_performance(project_id: str) -> dict | None:
             "overall_score": overall_sum / count,
             "objection_handling": objection_sum / count,
             "communication_clarity": clarity_sum / count,
+            "relevance": relevance_sum / count,
+            "groundedness": groundedness_sum / count,
             "strengths": strengths,
             "weaknesses": weaknesses,
         }

@@ -27,6 +27,8 @@ export interface GlobalPerformance {
     overallScore: number;
     objectionHandling: number;
     communicationClarity: number;
+    relevance: number;
+    groundedness: number;
     strengths: string[];
     weaknesses: string[];
 }
@@ -233,13 +235,17 @@ export const api = {
         }
 
         const data = await res.json();
+        const breakdown = data.score_breakdown ?? {};
+        const clarityVal = data.clarity || (breakdown.clarity ? breakdown.clarity * 10 : 0) || data.communication_clarity || 0;
+        const relevanceVal = data.relevance || (breakdown.relevance ? breakdown.relevance * 10 : 0) || 0;
+        const groundednessVal = data.groundedness || (breakdown.groundedness ? breakdown.groundedness * 10 : 0) || 0;
         return {
             overallScore: data.overall_score,
             objectionHandling: data.objection_handling,
             communicationClarity: data.communication_clarity,
-            clarity: data.clarity ?? 0,
-            relevance: data.relevance ?? 0,
-            groundedness: data.groundedness ?? 0,
+            clarity: clarityVal,
+            relevance: relevanceVal,
+            groundedness: groundednessVal,
             strengths: data.strengths,
             weaknesses: data.weaknesses,
             aiFeedback: data.ai_feedback,
@@ -261,6 +267,8 @@ export const api = {
             overallScore: data.overall_score,
             objectionHandling: data.objection_handling,
             communicationClarity: data.communication_clarity,
+            relevance: data.relevance ?? 0,
+            groundedness: data.groundedness ?? 0,
             strengths: data.strengths ?? [],
             weaknesses: data.weaknesses ?? [],
         };

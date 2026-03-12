@@ -148,5 +148,7 @@ class GlobalPerformanceResponse(BaseModel):
     overall_score: float
     objection_handling: float
     communication_clarity: float
+    relevance: float
+    groundedness: float
     strengths: list[str]
     weaknesses: list[str]
