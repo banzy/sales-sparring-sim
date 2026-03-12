@@ -95,6 +95,20 @@ class SparringChatResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Suggestion (AI Response Helper)
+# ---------------------------------------------------------------------------
+
+class SuggestResponseRequest(BaseModel):
+    scenario_id: str
+    project_id: str
+    conversation_history: list[ChatMessage] = []
+
+
+class SuggestResponseResponse(BaseModel):
+    suggestion: str
+
+
+# ---------------------------------------------------------------------------
 # Session evaluation
 # ---------------------------------------------------------------------------
 

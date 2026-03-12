@@ -250,4 +250,32 @@ export const api = {
         if (!res.ok) throw new Error(`API error: ${res.statusText}`);
         return await res.json() as SessionDetail;
     },
+
+    /** Generate an AI-suggested seller response grounded in full context */
+    async suggestResponse(
+        scenarioId: string,
+        history: Array<{ role: string; content: string }>,
+    ): Promise<{ suggestion: string }> {
+        const res = await fetch(`${API_BASE}/suggest_response`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                scenario_id: scenarioId,
+                project_id: scenarioId,
+                conversation_history: history.filter(m => m.role === "buyer" || m.role === "seller"),
+            }),
+        });
+
+        if (!res.ok) {
+            let detail: string | null = null;
+            try {
+                detail = (await res.json()).detail;
+            } catch {
+                detail = null;
+            }
+            throw new Error(getErrorMessage(`API error: ${res.statusText}`, detail));
+        }
+
+        return await res.json();
+    },
 };

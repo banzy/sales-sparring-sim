@@ -297,11 +297,28 @@ export default function SparringArena() {
 
   const handleAiSuggest = async () => {
     if (isLoadingAiSuggestion) return;
+    if (!scenarioId) {
+      toast({ variant: "destructive", title: "Missing Scenario context. Go back to setup." });
+      return;
+    }
+
     setIsLoadingAiSuggestion(true);
 
-    window.setTimeout(() => {
+    try {
+      const history = sparringSession.messages.map(m => ({ role: m.role, content: m.content }));
+      const data = await api.suggestResponse(scenarioId, history);
+      setInput(data.suggestion);
+    } catch (err: unknown) {
+      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate suggestion.";
+      toast({
+        variant: "destructive",
+        title: "Suggestion Error",
+        description: errorMessage,
+      });
+    } finally {
       setIsLoadingAiSuggestion(false);
-    }, 1000);
+    }
   };
 
   const startRecording = async () => {

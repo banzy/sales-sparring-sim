@@ -1,9 +1,14 @@
 import logging
 from fastapi import APIRouter, HTTPException
 from app.core.llm_client import LLMServiceError
-from app.models.schemas import SparringChatRequest, SparringChatResponse
+from app.models.schemas import (
+    SparringChatRequest,
+    SparringChatResponse,
+    SuggestResponseRequest,
+    SuggestResponseResponse,
+)
 from app.api.routes_scenarios import get_scenario
-from app.modules import sparring_engine
+from app.modules import sparring_engine, suggestion_engine
 from app.storage import session_store
 
 router = APIRouter()
@@ -36,4 +41,26 @@ def sparring_chat(request: SparringChatRequest):
         raise HTTPException(status_code=e.status_code, detail=str(e)) from e
     except Exception as e:
         logger.exception("Unhandled error in sparring_chat")
+        raise HTTPException(status_code=500, detail="Unexpected server error.") from e
+
+
+@router.post("/suggest_response", response_model=SuggestResponseResponse)
+def suggest_response(request: SuggestResponseRequest):
+    """Generate an AI-suggested seller response grounded in full context."""
+    try:
+        history = [{"role": msg.role, "content": msg.content} for msg in request.conversation_history]
+
+        suggestion = suggestion_engine.suggest_response(
+            scenario_id=request.scenario_id,
+            project_id=request.project_id,
+            conversation_history=history,
+        )
+
+        return {"suggestion": suggestion}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except LLMServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e)) from e
+    except Exception as e:
+        logger.exception("Unhandled error in suggest_response")
         raise HTTPException(status_code=500, detail="Unexpected server error.") from e
