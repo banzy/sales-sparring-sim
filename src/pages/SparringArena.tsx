@@ -120,6 +120,9 @@ export default function SparringArena() {
     [pastSessions, hasLiveProgress],
   );
 
+  const contextSetup = useAppStore(state => state.contextSetup);
+  const scenarioId = contextSetup.scenarioId;
+
   // Derive cumulative objection progress across all completed sessions for this scenario.
   const cumulativeCompletedObjections = useMemo(() => {
     if (!scenarioId) return new Set<string>();
@@ -144,9 +147,6 @@ export default function SparringArena() {
     const endOfTurn = turns.slice(0, activeTurnIndex + 1);
     return endOfTurn.flat();
   }, [isPastSessionView, pastSessionMessages, turns, activeTurnIndex]);
-
-  const contextSetup = useAppStore(state => state.contextSetup);
-  const scenarioId = contextSetup.scenarioId;
 
   useEffect(() => {
     if (!sparringSession.isActive && !isPastSessionView) {

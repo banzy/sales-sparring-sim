@@ -191,6 +191,8 @@ def _ensure_project_id_columns(engine: Engine) -> None:
         if "project_id" not in session_columns:
             conn.execute(text("ALTER TABLE sessions ADD COLUMN project_id VARCHAR"))
             session_columns = _table_columns(conn, "sessions")
+        if "completed_objections_json" not in session_columns:
+            conn.execute(text("ALTER TABLE sessions ADD COLUMN completed_objections_json TEXT DEFAULT '[]'"))
 
         score_columns = _table_columns(conn, "session_scores")
         if "project_id" not in score_columns and "user_id" in score_columns:
