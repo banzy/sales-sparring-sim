@@ -58,6 +58,7 @@ export default function Performance() {
         const result = await api.evaluateSession(
           scenarioId,
           sparringSession.messages,
+          sparringSession.objectionChecklist.filter((o) => o.tested).map((o) => o.id),
         );
         setPerformance({
           overallScore: result.overallScore,

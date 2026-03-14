@@ -445,33 +445,22 @@ def _make_session():
     return sessionmaker(autocommit=False, autoflush=False, bind=_engine())()
 
 
-def save_session(session_id: str, project_id: str, scenario_id: str, transcript: list[dict]) -> None:
+def save_session(
+    session_id: str,
+    project_id: str,
+    scenario_id: str,
+    transcript: list[dict],
+    completed_objections: list[str] | None = None,
+) -> None:
     db = _make_session()
     try:
+        ids = list(completed_objections) if completed_objections else []
         record = Session(
             id=session_id,
             project_id=project_id,
             scenario_id=scenario_id,
             transcript_json=json.dumps(transcript),
-            # For now we derive completed objections from the transcript structure itself,
-            # looking for any messages that carry an `objections_triggered` array.
-            completed_objections_json=json.dumps(
-                sorted(
-                    {
-                        obj_id
-                        for turn in transcript
-                        for obj_id in (
-                            [
-                                o.get("id")
-                                for o in (turn.get("objections_triggered") or [])
-                                if isinstance(o, dict) and o.get("id")
-                            ]
-                            if isinstance(turn, dict)
-                            else []
-                        )
-                    }
-                )
-            ),
+            completed_objections_json=json.dumps(sorted(ids)),
         )
         db.merge(record)
         db.commit()

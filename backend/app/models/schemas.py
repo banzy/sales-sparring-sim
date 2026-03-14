@@ -116,6 +116,7 @@ class EvaluateSessionRequest(BaseModel):
     project_id: str
     scenario_id: str
     transcript: list[ChatMessage]
+    completed_objections: list[str] = []
 
 
 class ScoreBreakdown(BaseModel):

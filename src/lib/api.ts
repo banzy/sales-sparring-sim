@@ -224,7 +224,11 @@ export const api = {
     },
 
     /** Evaluate the entire session */
-    async evaluateSession(scenarioId: string, transcript: Message[]): Promise<PerformanceData> {
+    async evaluateSession(
+        scenarioId: string,
+        transcript: Message[],
+        completedObjectionIds?: string[],
+    ): Promise<PerformanceData> {
         const res = await fetch(`${API_BASE}/evaluate_session`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -232,6 +236,7 @@ export const api = {
                 scenario_id: scenarioId,
                 project_id: scenarioId,
                 transcript: transcript.map(m => ({ role: m.role, content: m.content })),
+                completed_objections: completedObjectionIds ?? [],
             }),
         });
 

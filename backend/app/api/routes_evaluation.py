@@ -37,6 +37,7 @@ def evaluate_session(request: EvaluateSessionRequest):
             project_id=request.project_id,
             scenario_id=request.scenario_id,
             transcript=transcript,
+            completed_objections=request.completed_objections,
         )
         
         session_store.save_score(
