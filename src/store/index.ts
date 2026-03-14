@@ -102,6 +102,7 @@ interface AppState {
 
   setContextSetup: (data: Partial<ContextSetupData>) => void;
   activateProject: (scenarioId: string, contextOverrides?: Partial<ContextSetupData>) => void;
+  deleteProject: (scenarioId: string) => void;
   setBriefing: (data: Partial<BriefingData>) => void;
 
   startSparringSession: (masteredObjectionIds?: Set<string>) => void;
@@ -457,6 +458,28 @@ export const useAppStore = create<AppState>()(
 
         activateProject: (scenarioId, contextOverrides = {}) =>
           set((state) => applyProjectState(syncActiveProjectState(state), scenarioId, contextOverrides)),
+
+        deleteProject: (scenarioId) =>
+          set((state) => {
+            const { [scenarioId]: _, ...remainingProjects } = state.projectStates;
+            
+            // If deleting the active project, reset to default state
+            if (state.contextSetup.scenarioId === scenarioId) {
+              return {
+                ...state,
+                contextSetup: cloneContextSetup(defaultContextSetup),
+                briefing: cloneBriefing(defaultBriefing),
+                sparringSession: createDefaultSparringSession(defaultBriefing, defaultContextSetup),
+                performance: createDefaultPerformance(),
+                projectStates: remainingProjects,
+              };
+            }
+            
+            return {
+              ...state,
+              projectStates: remainingProjects,
+            };
+          }),
 
         setBriefing: (data) =>
           set((state) => {

@@ -10,6 +10,7 @@ import {
   Shield,
   Sparkles,
   Target,
+  Trash2,
 } from 'lucide-react';
 import {
   Accordion,
@@ -17,6 +18,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +37,7 @@ import {
   resolveProjectName,
 } from '@/lib/projects';
 import { useAppStore } from '@/store';
+import { useToast } from '@/hooks/use-toast';
 
 type ProjectSnapshot = ReturnType<
   typeof useAppStore.getState
@@ -110,7 +122,15 @@ export default function Projects() {
   const [activatingProjectId, setActivatingProjectId] = useState<string | null>(
     null,
   );
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(
+    null,
+  );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<ProjectSummary | null>(
+    null,
+  );
 
+  const { toast } = useToast();
   const activeProjectId = useAppStore((state) => state.contextSetup.scenarioId);
   const activeProjectName = useAppStore((state) =>
     resolveProjectName({
@@ -121,6 +141,7 @@ export default function Projects() {
   );
   const projectStates = useAppStore((state) => state.projectStates);
   const activateProject = useAppStore((state) => state.activateProject);
+  const deleteProject = useAppStore((state) => state.deleteProject);
   const setBriefing = useAppStore((state) => state.setBriefing);
 
   useEffect(() => {
@@ -240,6 +261,46 @@ export default function Projects() {
     } finally {
       setActivatingProjectId(null);
     }
+  };
+
+  const handleDeleteClick = (project: ProjectSummary) => {
+    setProjectToDelete(project);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!projectToDelete) return;
+
+    setDeletingProjectId(projectToDelete.scenarioId);
+    
+    try {
+      deleteProject(projectToDelete.scenarioId);
+      
+      toast({
+        title: 'Project deleted',
+        description: `${projectToDelete.label} has been removed from your workspace.`,
+      });
+
+      // If we deleted the active project, navigate to home
+      if (projectToDelete.scenarioId === activeProjectId) {
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Failed to delete project.',
+      });
+    } finally {
+      setDeletingProjectId(null);
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setProjectToDelete(null);
   };
 
   const trackedProjects = projects.length;
@@ -807,6 +868,16 @@ export default function Projects() {
                           <CalendarDays className="mr-2 h-4 w-4" />
                           View Session History
                         </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDeleteClick(project)}
+                          disabled={deletingProjectId === project.scenarioId}
+                          className="rounded-xl text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:border-red-900 dark:hover:text-red-300 dark:hover:bg-red-950"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Project
+                        </Button>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -826,6 +897,51 @@ export default function Projects() {
             reload its briefing from the backend before making it active.
           </div>
         )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <span>Delete Project?</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">
+                {projectToDelete?.label}
+              </span>
+              ?
+              <div className="mt-3 space-y-2 text-sm">
+                <p>This will remove:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Project briefing and configuration</li>
+                  <li>Client research data</li>
+                  <li>Conversation transcripts</li>
+                  <li>All local project data</li>
+                </ul>
+                <p className="mt-3 text-muted-foreground">
+                  <strong>Note:</strong> Session history stored on the server will remain accessible.
+                  This action cannot be undone.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel} className="rounded-xl">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="rounded-xl bg-destructive hover:bg-destructive/90"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
