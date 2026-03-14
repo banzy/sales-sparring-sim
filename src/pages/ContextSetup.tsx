@@ -53,11 +53,15 @@ export default function ContextSetup() {
     const acceptedExtensions = ["pdf", "txt", "docx"];
     const maxSizeBytes = 10 * 1024 * 1024; // 10MB
 
-    const files = Array.from(fileList).filter((file) => {
+    const allFiles = Array.from(fileList);
+    const skippedFiles: string[] = [];
+    
+    const files = allFiles.filter((file) => {
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
       const isAllowed = acceptedExtensions.includes(ext);
       const isSizeOk = file.size <= maxSizeBytes;
       if (!isAllowed || !isSizeOk) {
+        skippedFiles.push(file.name);
         console.warn(
           `Skipping file '${file.name}' due to unsupported type or size > 10MB`
         );
@@ -66,6 +70,21 @@ export default function ContextSetup() {
     });
 
     setUploadedFiles(files);
+    
+    if (files.length > 0) {
+      toast({
+        title: "Files selected",
+        description: `${files.length} file${files.length > 1 ? "s" : ""} ready to upload`,
+      });
+    }
+    
+    if (skippedFiles.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Some files skipped",
+        description: `${skippedFiles.length} file${skippedFiles.length > 1 ? "s were" : " was"} skipped (unsupported type or >10MB)`,
+      });
+    }
   };
 
   const handleProcess = async (mode: 'upload' | 'synthetic' | 'demo') => {
@@ -241,10 +260,26 @@ export default function ContextSetup() {
                   />
                 </div>
                 <div
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                  onDragLeave={() => setDragOver(false)}
+                  onDragOver={(e) => { 
+                    e.preventDefault(); 
+                    e.stopPropagation();
+                    setDragOver(true); 
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Only set dragOver to false if we're leaving the drop zone itself
+                    if (e.currentTarget === e.target) {
+                      setDragOver(false);
+                    }
+                  }}
                   onDrop={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     setDragOver(false);
                     handleFilesSelected(e.dataTransfer.files);
                   }}
@@ -271,6 +306,17 @@ export default function ContextSetup() {
                   <p className="text-xs text-muted-foreground mt-1">
                     PDF, TXT, DOCX up to 10MB
                   </p>
+                  {uploadedFiles.length > 0 && (
+                    <div className="mt-3 w-full text-left space-y-1">
+                      {uploadedFiles.map((file, idx) => (
+                        <div key={idx} className="text-xs text-muted-foreground flex items-center gap-2">
+                          <FileText className="h-3 w-3" />
+                          <span className="truncate">{file.name}</span>
+                          <span className="text-[10px]">({(file.size / 1024).toFixed(1)} KB)</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
