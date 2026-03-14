@@ -1,18 +1,33 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Send, Mic, User, Bot, AlertTriangle, CheckCircle2, X, Check, Loader2, PlayCircle, PauseCircle, History, RotateCcw, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useNavigate } from "react-router-dom";
-import { useAppStore, type Message } from "@/store";
-import { api, type SessionSummary } from "@/lib/api";
-import { getSessionDisplayState } from "@/lib/sessionTimeline";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  Send,
+  Mic,
+  User,
+  Bot,
+  AlertTriangle,
+  CheckCircle2,
+  X,
+  Check,
+  Loader2,
+  PlayCircle,
+  PauseCircle,
+  History,
+  RotateCcw,
+  Sparkles,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { useNavigate } from 'react-router-dom';
+import { useAppStore, type Message } from '@/store';
+import { api, type SessionSummary } from '@/lib/api';
+import { getSessionDisplayState } from '@/lib/sessionTimeline';
+import { useToast } from '@/hooks/use-toast';
 
-type InputMode = "text" | "recording" | "processing";
+type InputMode = 'text' | 'recording' | 'processing';
 
 function RecordingTimer({ startTime }: { startTime: number }) {
   const [elapsed, setElapsed] = useState(0);
@@ -25,7 +40,7 @@ function RecordingTimer({ startTime }: { startTime: number }) {
   const displaySecs = secs % 60;
   return (
     <span className="font-mono text-sm text-hud-foreground tabular-nums">
-      {String(mins).padStart(2, "0")}:{String(displaySecs).padStart(2, "0")}
+      {String(mins).padStart(2, '0')}:{String(displaySecs).padStart(2, '0')}
     </span>
   );
 }
@@ -39,7 +54,7 @@ function AudioWaveform() {
           className="w-[3px] rounded-full bg-hud-accent"
           style={{
             animation: `waveform 1.2s ease-in-out ${i * 0.06}s infinite alternate`,
-            height: "30%",
+            height: '30%',
           }}
         />
       ))}
@@ -55,18 +70,30 @@ function AudioWaveform() {
 
 export default function SparringArena() {
   const navigate = useNavigate();
-  const { sparringSession, addMessage, startSparringSession, endSparringSession, updateSessionStats } = useAppStore();
+  const {
+    sparringSession,
+    addMessage,
+    startSparringSession,
+    endSparringSession,
+    updateSessionStats,
+  } = useAppStore();
 
-  const [input, setInput] = useState("");
-  const [inputMode, setInputMode] = useState<InputMode>("text");
+  const [input, setInput] = useState('');
+  const [inputMode, setInputMode] = useState<InputMode>('text');
   const [isDurationPlaying, setIsDurationPlaying] = useState(false);
-  const [displayDuration, setDisplayDuration] = useState(sparringSession.sessionStats.duration);
+  const [displayDuration, setDisplayDuration] = useState(
+    sparringSession.sessionStats.duration,
+  );
   const [recordingStart, setRecordingStart] = useState(0);
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
   const [pastSessions, setPastSessions] = useState<SessionSummary[]>([]);
   const [pastSessionsLoaded, setPastSessionsLoaded] = useState(false);
-  const [selectedPastSessionId, setSelectedPastSessionId] = useState<string | null>(null);
-  const [pastSessionMessages, setPastSessionMessages] = useState<Message[] | null>(null);
+  const [selectedPastSessionId, setSelectedPastSessionId] = useState<
+    string | null
+  >(null);
+  const [pastSessionMessages, setPastSessionMessages] = useState<
+    Message[] | null
+  >(null);
   const [isPastSessionLoading, setIsPastSessionLoading] = useState(false);
   const [isLoadingAiSuggestion, setIsLoadingAiSuggestion] = useState(false);
 
@@ -91,9 +118,13 @@ export default function SparringArena() {
     const parsedTurns: Message[][] = [];
     let currentTurn: Message[] = [];
 
-    sparringSession.messages.forEach(msg => {
+    sparringSession.messages.forEach((msg) => {
       // A new turn starts when a seller sends a message, providing we already have messages in the current turn
-      if (msg.role === 'seller' && currentTurn.length > 0 && currentTurn.some(m => m.role === 'buyer')) {
+      if (
+        msg.role === 'seller' &&
+        currentTurn.length > 0 &&
+        currentTurn.some((m) => m.role === 'buyer')
+      ) {
         parsedTurns.push([...currentTurn]);
         currentTurn = [msg];
       } else {
@@ -110,10 +141,14 @@ export default function SparringArena() {
 
   const latestTurnIndex = turns.length > 0 ? turns.length - 1 : 0;
   // If selectedTurn is null or out of bounds, use the latest turn
-  const activeTurnIndex = selectedTurn !== null && selectedTurn <= latestTurnIndex ? selectedTurn : latestTurnIndex;
+  const activeTurnIndex =
+    selectedTurn !== null && selectedTurn <= latestTurnIndex
+      ? selectedTurn
+      : latestTurnIndex;
 
   const isPastSessionView = selectedPastSessionId !== null;
-  const isHistoricalView = !isPastSessionView && activeTurnIndex < latestTurnIndex;
+  const isHistoricalView =
+    !isPastSessionView && activeTurnIndex < latestTurnIndex;
   const isReadOnlyView = isPastSessionView || isHistoricalView;
   const hasLiveProgress = sparringSession.sessionStats.exchanges > 0;
   const { currentSessionNumber, pastSessions: sessionTimeline } = useMemo(
@@ -121,7 +156,7 @@ export default function SparringArena() {
     [pastSessions, hasLiveProgress],
   );
 
-  const contextSetup = useAppStore(state => state.contextSetup);
+  const contextSetup = useAppStore((state) => state.contextSetup);
   const scenarioId = contextSetup.scenarioId;
 
   // Derive cumulative objection progress across all completed sessions for this scenario.
@@ -129,9 +164,12 @@ export default function SparringArena() {
     if (!scenarioId) return new Set<string>();
 
     const ids = new Set<string>();
-    pastSessions.forEach(session => {
-      if (session.scenario_id === scenarioId || session.project_id === scenarioId) {
-        (session.completed_objections ?? []).forEach(id => {
+    pastSessions.forEach((session) => {
+      if (
+        session.scenario_id === scenarioId ||
+        session.project_id === scenarioId
+      ) {
+        (session.completed_objections ?? []).forEach((id) => {
           if (id) ids.add(id);
         });
       }
@@ -157,7 +195,14 @@ export default function SparringArena() {
         startSparringSession(cumulativeCompletedObjections);
       }
     }
-  }, [sparringSession.isActive, sparringSession.sessionStats.exchanges, startSparringSession, isPastSessionView, pastSessionsLoaded, cumulativeCompletedObjections]);
+  }, [
+    sparringSession.isActive,
+    sparringSession.sessionStats.exchanges,
+    startSparringSession,
+    isPastSessionView,
+    pastSessionsLoaded,
+    cumulativeCompletedObjections,
+  ]);
 
   useEffect(() => {
     if (!sparringSession.isActive || isReadOnlyView || !isDurationPlaying) {
@@ -165,14 +210,20 @@ export default function SparringArena() {
     }
 
     const interval = setInterval(() => {
-      const currentDuration = useAppStore.getState().sparringSession.sessionStats.duration;
+      const currentDuration =
+        useAppStore.getState().sparringSession.sessionStats.duration;
       updateSessionStats({ duration: currentDuration + 1 });
     }, 1000);
 
     return () => {
       clearInterval(interval);
     };
-  }, [sparringSession.isActive, isReadOnlyView, isDurationPlaying, updateSessionStats]);
+  }, [
+    sparringSession.isActive,
+    isReadOnlyView,
+    isDurationPlaying,
+    updateSessionStats,
+  ]);
 
   useEffect(() => {
     if (!scenarioId) {
@@ -191,29 +242,35 @@ export default function SparringArena() {
     setPastSessionMessages(null);
     setIsPastSessionLoading(false);
 
-    api.listSessions(scenarioId).then(list => {
-      if (cancelled) {
-        return;
-      }
+    api
+      .listSessions(scenarioId)
+      .then((list) => {
+        if (cancelled) {
+          return;
+        }
 
-      const projectSessions = list.filter((session) =>
-        session.overall_score !== null &&
-        (session.scenario_id === scenarioId || session.project_id === scenarioId)
-      );
-      setPastSessions(projectSessions);
-      setPastSessionsLoaded(true);
-    }).catch((error) => {
-      console.error(error);
-      if (!cancelled) {
-        setPastSessions([]);
+        const projectSessions = list.filter(
+          (session) =>
+            session.overall_score !== null &&
+            (session.scenario_id === scenarioId ||
+              session.project_id === scenarioId),
+        );
+        setPastSessions(projectSessions);
         setPastSessionsLoaded(true);
-        toast({
-          variant: "destructive",
-          title: "Failed to load past sessions",
-          description: error instanceof Error ? error.message : "Unexpected error",
-        });
-      }
-    });
+      })
+      .catch((error) => {
+        console.error(error);
+        if (!cancelled) {
+          setPastSessions([]);
+          setPastSessionsLoaded(true);
+          toast({
+            variant: 'destructive',
+            title: 'Failed to load past sessions',
+            description:
+              error instanceof Error ? error.message : 'Unexpected error',
+          });
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -230,33 +287,38 @@ export default function SparringArena() {
     let cancelled = false;
     setIsPastSessionLoading(true);
 
-    api.getSession(selectedPastSessionId).then((detail) => {
-      if (cancelled) {
-        return;
-      }
+    api
+      .getSession(selectedPastSessionId)
+      .then((detail) => {
+        if (cancelled) {
+          return;
+        }
 
-      const mapped = detail.transcript.map((msg, index) => ({
-        id: index + 1,
-        role: msg.role === "seller" ? "seller" as const : "buyer" as const,
-        content: msg.content,
-      }));
-      setPastSessionMessages(mapped);
-    }).catch((error) => {
-      console.error(error);
-      if (cancelled) {
-        return;
-      }
+        const mapped = detail.transcript.map((msg, index) => ({
+          id: index + 1,
+          role:
+            msg.role === 'seller' ? ('seller' as const) : ('buyer' as const),
+          content: msg.content,
+        }));
+        setPastSessionMessages(mapped);
+      })
+      .catch((error) => {
+        console.error(error);
+        if (cancelled) {
+          return;
+        }
 
-      setPastSessionMessages([]);
-      toast({
-        variant: "destructive",
-        title: "Failed to load past session",
+        setPastSessionMessages([]);
+        toast({
+          variant: 'destructive',
+          title: 'Failed to load past session',
+        });
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsPastSessionLoading(false);
+        }
       });
-    }).finally(() => {
-      if (!cancelled) {
-        setIsPastSessionLoading(false);
-      }
-    });
 
     return () => {
       cancelled = true;
@@ -268,20 +330,23 @@ export default function SparringArena() {
     if (!text) return;
 
     if (!scenarioId) {
-      toast({ variant: "destructive", title: "Missing Scenario context. Go back to setup." });
+      toast({
+        variant: 'destructive',
+        title: 'Missing Scenario context. Go back to setup.',
+      });
       return;
     }
 
     const newMsg: Message = {
       id: sparringSession.messages.length + 1,
-      role: "seller",
+      role: 'seller',
       content: text,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     addMessage(newMsg);
-    setInput("");
-    setInputMode("processing");
+    setInput('');
+    setInputMode('processing');
 
     try {
       // Include the message we just added to state, along with previous history
@@ -291,29 +356,35 @@ export default function SparringArena() {
 
       const buyerMsg: Message = {
         id: historyToSend.length + 1,
-        role: "buyer",
+        role: 'buyer',
         content: response.buyer_response,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       addMessage(buyerMsg);
 
       // Update objections triggered
-      if (response.objections_triggered && response.objections_triggered.length > 0) {
+      if (
+        response.objections_triggered &&
+        response.objections_triggered.length > 0
+      ) {
         response.objections_triggered.forEach((obj: { id: string }) => {
           useAppStore.getState().markObjectionTested(obj.id);
         });
       }
     } catch (err: unknown) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to reach the sparring engine.";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to reach the sparring engine.';
       toast({
-        variant: "destructive",
-        title: "Communication Error",
+        variant: 'destructive',
+        title: 'Communication Error',
         description: errorMessage,
       });
     } finally {
-      setInputMode("text");
+      setInputMode('text');
       // ensure we snap back to the latest turn when sending
       setSelectedTurn(null);
     }
@@ -322,22 +393,29 @@ export default function SparringArena() {
   const handleAiSuggest = async () => {
     if (isLoadingAiSuggestion) return;
     if (!scenarioId) {
-      toast({ variant: "destructive", title: "Missing Scenario context. Go back to setup." });
+      toast({
+        variant: 'destructive',
+        title: 'Missing Scenario context. Go back to setup.',
+      });
       return;
     }
 
     setIsLoadingAiSuggestion(true);
 
     try {
-      const history = sparringSession.messages.map(m => ({ role: m.role, content: m.content }));
+      const history = sparringSession.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
       const data = await api.suggestResponse(scenarioId, history);
       setInput(data.suggestion);
     } catch (err: unknown) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to generate suggestion.";
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to generate suggestion.';
       toast({
-        variant: "destructive",
-        title: "Suggestion Error",
+        variant: 'destructive',
+        title: 'Suggestion Error',
         description: errorMessage,
       });
     } finally {
@@ -357,29 +435,39 @@ export default function SparringArena() {
       };
 
       mediaRecorder.start();
-      console.log("[Audio] MediaRecorder started.");
-      setInputMode("recording");
+      console.log('[Audio] MediaRecorder started.');
+      setInputMode('recording');
       setRecordingStart(Date.now());
     } catch (err) {
-      toast({ variant: "destructive", title: "Microphone Access Denied" });
+      toast({ variant: 'destructive', title: 'Microphone Access Denied' });
     }
   };
 
   const cancelRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === 'recording'
+    ) {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
     }
-    setInputMode("text");
+    setInputMode('text');
   };
 
   const sendRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === 'recording'
+    ) {
       mediaRecorderRef.current.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current?.stream
+          .getTracks()
+          .forEach((track) => track.stop());
 
-        setInputMode("processing");
+        setInputMode('processing');
 
         try {
           // Send blob via HTTP to backend
@@ -397,13 +485,17 @@ export default function SparringArena() {
 
           const data = await response.json();
           if (data && data.text) {
-            setInput((prev) => prev + (prev ? " " : "") + data.text.trim());
+            setInput((prev) => prev + (prev ? ' ' : '') + data.text.trim());
           }
-          setInputMode("text");
+          setInputMode('text');
         } catch (error) {
-          console.error("[Audio] DECODE ERROR:", error);
-          toast({ variant: "destructive", title: "Transcription Error", description: String(error) });
-          setInputMode("text");
+          console.error('[Audio] DECODE ERROR:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Transcription Error',
+            description: String(error),
+          });
+          setInputMode('text');
         }
       };
 
@@ -418,31 +510,50 @@ export default function SparringArena() {
         <div className="px-6 py-3.5 border-b border-border bg-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${isReadOnlyView ? 'bg-muted-foreground' : 'bg-success animate-pulse'}`} />
+              <div
+                className={`h-2 w-2 rounded-full ${isReadOnlyView ? 'bg-muted-foreground' : 'bg-success animate-pulse'}`}
+              />
               <span className="text-sm font-medium">
-                {isPastSessionView ? 'Past Session Replay' : isHistoricalView ? 'Historical View' : 'Live Sparring Session'}
+                {isPastSessionView
+                  ? 'Past Session Replay'
+                  : isHistoricalView
+                    ? 'Historical View'
+                    : 'Live Sparring Session'}
               </span>
               {!isPastSessionView && (
-                <Badge variant="outline" className="text-[10px] font-mono rounded-lg">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-mono rounded-lg"
+                >
                   Session {currentSessionNumber}
                 </Badge>
               )}
-              {!isReadOnlyView && <Badge variant="secondary" className="text-[10px] font-mono ml-2 rounded-lg">REC</Badge>}
+              {!isReadOnlyView && (
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] font-mono ml-2 rounded-lg"
+                >
+                  REC
+                </Badge>
+              )}
             </div>
 
             {/* Iteration Navigator */}
             {!isPastSessionView && turns.length > 1 && (
               <div className="flex items-center gap-1.5 bg-muted/50 p-1 rounded-lg">
                 <History className="h-3.5 w-3.5 text-muted-foreground ml-2" />
-                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mr-1">Turns</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mr-1">
+                  Turns
+                </span>
                 {turns.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedTurn(idx)}
-                    className={`h-6 min-w-[24px] px-2 rounded-md text-xs font-medium transition-colors ${idx === activeTurnIndex
-                      ? 'bg-background shadow-sm text-foreground'
-                      : 'text-muted-foreground hover:bg-background/50'
-                      }`}
+                    className={`h-6 min-w-[24px] px-2 rounded-md text-xs font-medium transition-colors ${
+                      idx === activeTurnIndex
+                        ? 'bg-background shadow-sm text-foreground'
+                        : 'text-muted-foreground hover:bg-background/50'
+                    }`}
                   >
                     {idx + 1}
                   </button>
@@ -459,25 +570,31 @@ export default function SparringArena() {
               <span className="text-sm">Loading past session...</span>
             </div>
           ) : (
-            <div className="space-y-4 max-w-2xl">
+            <div className="space-y-4 w-[96%]">
               {displayedMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex gap-3 ${msg.role === "seller" ? "flex-row-reverse" : ""}`}
+                  className={`flex gap-3 ${msg.role === 'seller' ? 'flex-row-reverse' : ''}`}
                 >
                   <div
-                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${msg.role === "buyer"
-                      ? "bg-muted text-muted-foreground"
-                      : "bg-muted text-muted-foreground"
-                      }`}
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      msg.role === 'buyer'
+                        ? 'bg-muted text-muted-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
                   >
-                    {msg.role === "buyer" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    {msg.role === 'buyer' ? (
+                      <Bot className="h-4 w-4" />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
                   </div>
                   <div
-                    className={`rounded-2xl px-4 py-3 text-sm max-w-[80%] ${msg.role === "buyer"
-                      ? "bg-card border border-border text-foreground rounded-tl-md"
-                      : "bg-primary text-primary-foreground rounded-tr-md"
-                      }`}
+                    className={`rounded-2xl px-4 py-3 text-sm max-w-[96%] ${
+                      msg.role === 'buyer'
+                        ? 'bg-card border border-border text-foreground rounded-tl-md'
+                        : 'bg-primary text-primary-foreground rounded-tr-md'
+                    }`}
                   >
                     {msg.content}
                   </div>
@@ -488,13 +605,15 @@ export default function SparringArena() {
         </ScrollArea>
 
         <div className="px-6 py-4 border-t border-border bg-background">
-          <div className="flex gap-2 max-w-2xl items-center">
+          <div className="flex gap-2 w-[96%] items-center">
             {isReadOnlyView ? (
               <div className="flex-1 flex flex-col items-center justify-center py-2 bg-muted/40 rounded-xl border border-dashed border-border/60">
                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
                   <History className="h-4 w-4" />
                   <span className="text-sm font-medium">
-                    {isPastSessionView ? "Viewing Past Session (Read Only)" : "Viewing Past Iteration (Read Only)"}
+                    {isPastSessionView
+                      ? 'Viewing Past Session (Read Only)'
+                      : 'Viewing Past Iteration (Read Only)'}
                   </span>
                 </div>
                 <Button
@@ -512,7 +631,7 @@ export default function SparringArena() {
               </div>
             ) : (
               <>
-                {inputMode === "text" && (
+                {inputMode === 'text' && (
                   <>
                     <button
                       onClick={handleAiSuggest}
@@ -529,16 +648,20 @@ export default function SparringArena() {
                     <Input
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                       placeholder="Type your response..."
                       className="flex-1 rounded-xl"
                     />
-                    <Button onClick={() => handleSend()} disabled={!input.trim()} className="shrink-0 rounded-xl">
+                    <Button
+                      onClick={() => handleSend()}
+                      disabled={!input.trim()}
+                      className="shrink-0 rounded-xl"
+                    >
                       <Send className="h-4 w-4" />
                     </Button>
                     <button
                       onClick={startRecording}
-                      title={"Start Recording"}
+                      title={'Start Recording'}
                       className="shrink-0 h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
                     >
                       <Mic className="h-5 w-5" />
@@ -546,14 +669,19 @@ export default function SparringArena() {
                   </>
                 )}
 
-                {inputMode === "recording" && (
+                {inputMode === 'recording' && (
                   <>
                     <div className="flex-1 flex items-center gap-3 bg-muted rounded-xl px-4 py-2">
                       <div className="h-3 w-3 rounded-full bg-destructive animate-pulse shrink-0" />
                       <AudioWaveform />
                       <RecordingTimer startTime={recordingStart} />
                     </div>
-                    <Button size="icon" variant="destructive" onClick={cancelRecording} className="shrink-0 rounded-xl">
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={cancelRecording}
+                      className="shrink-0 rounded-xl"
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                     <button
@@ -565,10 +693,12 @@ export default function SparringArena() {
                   </>
                 )}
 
-                {inputMode === "processing" && (
+                {inputMode === 'processing' && (
                   <div className="flex-1 flex items-center justify-center gap-2 py-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm font-medium">Transcribing Voice...</span>
+                    <span className="text-sm font-medium">
+                      Transcribing Voice...
+                    </span>
                   </div>
                 )}
               </>
@@ -584,7 +714,9 @@ export default function SparringArena() {
             <div className="bg-muted/60 border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 font-medium mb-1.5">
                 <History className="h-4 w-4 text-muted-foreground" />
-                {isPastSessionView ? "Past Session Review" : `Turn ${activeTurnIndex + 1} Review`}
+                {isPastSessionView
+                  ? 'Past Session Review'
+                  : `Turn ${activeTurnIndex + 1} Review`}
               </div>
               <p className="text-xs text-muted-foreground text-balance leading-relaxed">
                 You are reviewing a past exchange in read-only mode.
@@ -596,7 +728,9 @@ export default function SparringArena() {
             <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-1">
               Current Persona
             </p>
-            <p className="text-sm font-semibold text-hud-foreground">{sparringSession.currentPersona.name}</p>
+            <p className="text-sm font-semibold text-hud-foreground">
+              {sparringSession.currentPersona.name}
+            </p>
             <p className="text-xs text-hud-foreground/60 mt-0.5">
               {sparringSession.currentPersona.description}
             </p>
@@ -608,8 +742,12 @@ export default function SparringArena() {
             <p className="text-[10px] uppercase tracking-widest text-hud-foreground/50 font-mono mb-2">
               Difficulty Level
             </p>
-            <Badge variant="warning" className="font-mono text-xs rounded-full px-3 py-0.5">
-              {sparringSession.difficulty.charAt(0).toUpperCase() + sparringSession.difficulty.slice(1)}
+            <Badge
+              variant="warning"
+              className="font-mono text-xs rounded-full px-3 py-0.5"
+            >
+              {sparringSession.difficulty.charAt(0).toUpperCase() +
+                sparringSession.difficulty.slice(1)}
             </Badge>
           </div>
 
@@ -621,16 +759,26 @@ export default function SparringArena() {
             </p>
             <div className="space-y-2.5">
               {sparringSession.objectionChecklist.map((obj) => {
-                const isCompletedFromHistory = cumulativeCompletedObjections.has(obj.id);
+                const isCompletedFromHistory =
+                  cumulativeCompletedObjections.has(obj.id);
                 const isTested = obj.tested || isCompletedFromHistory;
                 return (
-                  <div key={obj.id} className="flex items-center gap-2.5 text-xs">
+                  <div
+                    key={obj.id}
+                    className="flex items-center gap-2.5 text-xs"
+                  >
                     {isTested ? (
                       <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
                     ) : (
                       <div className="h-3.5 w-3.5 rounded-full border border-hud-foreground/30 shrink-0" />
                     )}
-                    <span className={isTested ? "text-hud-foreground/40 line-through" : "text-hud-foreground"}>
+                    <span
+                      className={
+                        isTested
+                          ? 'text-hud-foreground/40 line-through'
+                          : 'text-hud-foreground'
+                      }
+                    >
                       {obj.title}
                     </span>
                   </div>
@@ -649,7 +797,8 @@ export default function SparringArena() {
               <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 min-w-[140px]">
                 <div className="text-left">
                   <p className="text-lg font-bold font-mono text-hud-foreground">
-                    {Math.floor(displayDuration / 60)}:{String(displayDuration % 60).padStart(2, '0')}
+                    {Math.floor(displayDuration / 60)}:
+                    {String(displayDuration % 60).padStart(2, '0')}
                   </p>
                   <p className="text-[10px] text-hud-foreground/50">Duration</p>
                 </div>
@@ -657,9 +806,11 @@ export default function SparringArena() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setIsDurationPlaying(prev => !prev)}
+                      onClick={() => setIsDurationPlaying((prev) => !prev)}
                       className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors ml-1.5"
-                      aria-label={isDurationPlaying ? "Pause timer" : "Play timer"}
+                      aria-label={
+                        isDurationPlaying ? 'Pause timer' : 'Play timer'
+                      }
                     >
                       {isDurationPlaying ? (
                         <PauseCircle className="h-5 w-5" />
@@ -684,7 +835,9 @@ export default function SparringArena() {
               </div>
               <div className="text-center p-3 rounded-xl bg-muted/50">
                 <p className="text-lg font-bold font-mono text-hud-foreground">
-                  {isReadOnlyView ? displayedMessages.length : sparringSession.sessionStats.exchanges}
+                  {isReadOnlyView
+                    ? displayedMessages.length
+                    : sparringSession.sessionStats.exchanges}
                 </p>
                 <p className="text-[10px] text-hud-foreground/50">Exchanges</p>
               </div>
@@ -703,23 +856,28 @@ export default function SparringArena() {
                 setSelectedPastSessionId(null);
                 setSelectedTurn(latestTurnIndex);
               }}
-              className={`w-full text-left flex items-center justify-between p-2 rounded-lg text-xs transition-colors relative overflow-hidden ${isPastSessionView
-                ? "bg-muted/40 hover:bg-muted/70"
-                : "border border-primary/30 bg-primary/10"
-                }`}
+              className={`w-full text-left flex items-center justify-between p-2 rounded-lg text-xs transition-colors relative overflow-hidden ${
+                isPastSessionView
+                  ? 'bg-muted/40 hover:bg-muted/70'
+                  : 'border border-primary/30 bg-primary/10'
+              }`}
             >
-              {!isPastSessionView && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
-              <div className={isPastSessionView ? "" : "ml-1"}>
-                <span className="block text-hud-foreground font-semibold">Current Session</span>
+              {!isPastSessionView && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+              )}
+              <div className={isPastSessionView ? '' : 'ml-1'}>
+                <span className="block text-hud-foreground font-semibold">
+                  Current Session
+                </span>
                 <span className="block text-[10px] uppercase tracking-widest text-primary/70 font-mono">
                   Session {currentSessionNumber}
                 </span>
               </div>
               <Badge
-                variant={isPastSessionView ? "outline" : "secondary"}
-                className={`font-mono text-[10px] rounded px-1.5 py-0 ${isPastSessionView ? "" : "border-primary/50 text-primary"}`}
+                variant={isPastSessionView ? 'outline' : 'secondary'}
+                className={`font-mono text-[10px] rounded px-1.5 py-0 ${isPastSessionView ? '' : 'border-primary/50 text-primary'}`}
               >
-                {isPastSessionView ? "Return" : "Live"}
+                {isPastSessionView ? 'Return' : 'Live'}
               </Badge>
             </button>
           </div>
@@ -741,13 +899,25 @@ export default function SparringArena() {
                         setSelectedTurn(null);
                         setSelectedPastSessionId(s.id);
                       }}
-                      className={`w-full text-left flex items-center justify-between p-2 rounded-lg text-xs transition-colors ${selectedPastSessionId === s.id
-                        ? "bg-primary/10 border border-primary/30"
-                        : "bg-muted/40 hover:bg-muted/70"
-                        }`}
+                      className={`w-full text-left flex items-center justify-between p-2 rounded-lg text-xs transition-colors ${
+                        selectedPastSessionId === s.id
+                          ? 'bg-primary/10 border border-primary/30'
+                          : 'bg-muted/40 hover:bg-muted/70'
+                      }`}
                     >
-                      <span className="text-hud-foreground/70 font-medium">Session {s.sessionNumber}</span>
-                      <Badge variant={s.overall_score && s.overall_score >= 75 ? "default" : s.overall_score && s.overall_score >= 50 ? "secondary" : "destructive"} className="font-mono text-[10px] rounded px-1.5 py-0">
+                      <span className="text-hud-foreground/70 font-medium">
+                        Session {s.sessionNumber}
+                      </span>
+                      <Badge
+                        variant={
+                          s.overall_score && s.overall_score >= 75
+                            ? 'default'
+                            : s.overall_score && s.overall_score >= 50
+                              ? 'secondary'
+                              : 'destructive'
+                        }
+                        className="font-mono text-[10px] rounded px-1.5 py-0"
+                      >
                         {s.overall_score}
                       </Badge>
                     </button>
@@ -765,7 +935,7 @@ export default function SparringArena() {
               className="w-full rounded-xl"
               onClick={() => {
                 endSparringSession();
-                navigate("/performance");
+                navigate('/performance');
               }}
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
