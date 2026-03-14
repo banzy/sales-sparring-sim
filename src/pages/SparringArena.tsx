@@ -14,11 +14,12 @@ import {
   History,
   RotateCcw,
   Sparkles,
+  Volume2,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
@@ -72,7 +73,9 @@ export default function SparringArena() {
   const navigate = useNavigate();
   const {
     sparringSession,
+    settings,
     addMessage,
+    removeLastUserMessage,
     startSparringSession,
     endSparringSession,
     updateSessionStats,
@@ -96,6 +99,9 @@ export default function SparringArena() {
   >(null);
   const [isPastSessionLoading, setIsPastSessionLoading] = useState(false);
   const [isLoadingAiSuggestion, setIsLoadingAiSuggestion] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(
+    null,
+  );
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -325,6 +331,12 @@ export default function SparringArena() {
     };
   }, [selectedPastSessionId, toast]);
 
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
   const handleSend = async (content?: string) => {
     const text = content || input.trim();
     if (!text) return;
@@ -503,6 +515,84 @@ export default function SparringArena() {
     }
   };
 
+  const handleSpeak = async (messageId: number, text: string) => {
+    try {
+      if (speakingMessageId === messageId) {
+        window.speechSynthesis.cancel();
+        setSpeakingMessageId(null);
+        return;
+      }
+
+      setSpeakingMessageId(messageId);
+
+      if (settings.voiceProvider === 'browser') {
+        if (!window.speechSynthesis) {
+          toast({
+            variant: 'destructive',
+            title: 'Text-to-speech not supported in this browser',
+          });
+          setSpeakingMessageId(null);
+          return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = () => setSpeakingMessageId(null);
+        utterance.onerror = (event) => {
+          console.error('[TTS] Error:', event);
+          setSpeakingMessageId(null);
+        };
+        
+        window.speechSynthesis.speak(utterance);
+      } else {
+        // OpenAI TTS
+        try {
+          const response = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, voice: settings.openaiVoice }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`TTS API returned status: ${response.status}`);
+          }
+
+          const audioBlob = await response.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          
+          audio.onended = () => {
+            setSpeakingMessageId(null);
+            URL.revokeObjectURL(audioUrl);
+          };
+          
+          audio.onerror = () => {
+            setSpeakingMessageId(null);
+            URL.revokeObjectURL(audioUrl);
+          };
+
+          await audio.play();
+        } catch (error) {
+          console.error('[TTS] OpenAI Error:', error);
+          setSpeakingMessageId(null);
+          toast({
+            variant: 'destructive',
+            title: 'OpenAI TTS error',
+            description: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[TTS] Error:', error);
+      setSpeakingMessageId(null);
+      toast({
+        variant: 'destructive',
+        title: 'Text-to-speech error',
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
       {/* Chat Area - 70% */}
@@ -571,35 +661,76 @@ export default function SparringArena() {
             </div>
           ) : (
             <div className="space-y-4 w-[96%]">
-              {displayedMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex gap-3 ${msg.role === 'seller' ? 'flex-row-reverse' : ''}`}
-                >
+              {displayedMessages.map((msg, idx) => {
+                const isLastSellerMessage = 
+                  msg.role === 'seller' && 
+                  !isReadOnlyView &&
+                  idx === displayedMessages.length - 1;
+                
+                return (
                   <div
-                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      msg.role === 'buyer'
-                        ? 'bg-muted text-muted-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
+                    key={msg.id}
+                    className={`flex gap-3 ${msg.role === 'seller' ? 'flex-row-reverse' : ''}`}
                   >
-                    {msg.role === 'buyer' ? (
-                      <Bot className="h-4 w-4" />
-                    ) : (
-                      <User className="h-4 w-4" />
-                    )}
+                    <div
+                      className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
+                        msg.role === 'buyer'
+                          ? 'bg-muted text-muted-foreground'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {msg.role === 'buyer' ? (
+                        <Bot className="h-4 w-4" />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div className={`flex-1 flex gap-2 items-start ${msg.role === 'seller' ? 'flex-row-reverse' : ''}`}>
+                      <div
+                        className={`rounded-2xl px-4 py-3 text-sm max-w-[96%] ${
+                          msg.role === 'buyer'
+                            ? 'bg-card border border-border text-foreground rounded-tl-md'
+                            : 'bg-primary text-primary-foreground rounded-tr-md'
+                        }`}
+                      >
+                        {msg.content}
+                      </div>
+                      {msg.role === 'buyer' && (
+                        <button
+                          onClick={() => handleSpeak(msg.id, msg.content)}
+                          className={`shrink-0 h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                            speakingMessageId === msg.id
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                          }`}
+                          title={
+                            speakingMessageId === msg.id
+                              ? 'Stop speaking'
+                              : 'Read aloud'
+                          }
+                        >
+                          <Volume2
+                            className={`h-4 w-4 ${speakingMessageId === msg.id ? 'animate-pulse' : ''}`}
+                          />
+                        </button>
+                      )}
+                      {isLastSellerMessage && (
+                        <button
+                          onClick={() => {
+                            removeLastUserMessage();
+                            window.speechSynthesis.cancel();
+                            setSpeakingMessageId(null);
+                          }}
+                          className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center transition-colors bg-destructive/10 hover:bg-destructive/20 text-destructive hover:text-destructive"
+                          title="Delete last message"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div
-                    className={`rounded-2xl px-4 py-3 text-sm max-w-[96%] ${
-                      msg.role === 'buyer'
-                        ? 'bg-card border border-border text-foreground rounded-tl-md'
-                        : 'bg-primary text-primary-foreground rounded-tr-md'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>

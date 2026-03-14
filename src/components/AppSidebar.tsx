@@ -5,6 +5,7 @@ import {
   Swords,
   BarChart3,
   ClockIcon,
+  Sliders,
 } from 'lucide-react';
 import ssaLogo from '@/assets/ssa.png';
 import { NavLink } from '@/components/NavLink';
@@ -30,6 +31,7 @@ const navItems = [
   { title: 'Sparring Arena', url: '/arena', icon: Swords },
   { title: 'Performance', url: '/performance', icon: BarChart3 },
   { title: "Session's History", url: '/history', icon: ClockIcon },
+  { title: 'Settings', url: '/settings', icon: Sliders },
 ];
 
 export function AppSidebar() {

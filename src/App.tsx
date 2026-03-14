@@ -10,6 +10,7 @@ import Briefing from "./pages/Briefing";
 import SparringArena from "./pages/SparringArena";
 import Performance from "./pages/Performance";
 import History from "./pages/History";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/arena" element={<SparringArena />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/history" element={<History />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

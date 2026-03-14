@@ -86,6 +86,11 @@ export interface PerformanceData {
   nextDifficulty?: string;
 }
 
+export interface AppSettings {
+  voiceProvider: 'browser' | 'openai';
+  openaiVoice: string;
+}
+
 interface ProjectStateSnapshot {
   contextSetup: ContextSetupData;
   briefing: BriefingData;
@@ -98,6 +103,7 @@ interface AppState {
   briefing: BriefingData;
   sparringSession: SparringSession;
   performance: PerformanceData;
+  settings: AppSettings;
   projectStates: Record<string, ProjectStateSnapshot>;
 
   setContextSetup: (data: Partial<ContextSetupData>) => void;
@@ -108,11 +114,13 @@ interface AppState {
   startSparringSession: (masteredObjectionIds?: Set<string>) => void;
   endSparringSession: () => void;
   addMessage: (message: Message) => void;
+  removeLastUserMessage: () => void;
   setInputMode: (mode: 'text' | 'recording' | 'processing') => void;
   updateSessionStats: (stats: Partial<SparringSession['sessionStats']>) => void;
   markObjectionTested: (objectionId: string) => void;
 
   setPerformance: (data: Partial<PerformanceData>) => void;
+  setSettings: (data: Partial<AppSettings>) => void;
 
   resetAll: () => void;
 }
@@ -347,6 +355,13 @@ function createDefaultPerformance(): PerformanceData {
   };
 }
 
+function createDefaultSettings(): AppSettings {
+  return {
+    voiceProvider: 'browser',
+    openaiVoice: 'alloy',
+  };
+}
+
 function clonePerformance(performance: PerformanceData): PerformanceData {
   return {
     overallScore: performance.overallScore,
@@ -435,6 +450,7 @@ function createInitialSlices() {
     briefing,
     sparringSession: createDefaultSparringSession(briefing, contextSetup),
     performance: createDefaultPerformance(),
+    settings: createDefaultSettings(),
     projectStates: {} as Record<string, ProjectStateSnapshot>,
   };
 }
@@ -556,6 +572,38 @@ export const useAppStore = create<AppState>()(
             })
           ),
 
+        removeLastUserMessage: () =>
+          set((state) => {
+            const messages = state.sparringSession.messages;
+            let lastSellerIndex = -1;
+            
+            for (let i = messages.length - 1; i >= 0; i--) {
+              if (messages[i].role === 'seller') {
+                lastSellerIndex = i;
+                break;
+              }
+            }
+
+            if (lastSellerIndex === -1) {
+              return state;
+            }
+
+            const newMessages = messages.slice(0, lastSellerIndex);
+            const exchangeDecrement = messages.length - lastSellerIndex;
+
+            return syncActiveProjectState({
+              ...state,
+              sparringSession: {
+                ...state.sparringSession,
+                messages: newMessages,
+                sessionStats: {
+                  ...state.sparringSession.sessionStats,
+                  exchanges: Math.max(0, state.sparringSession.sessionStats.exchanges - exchangeDecrement),
+                },
+              },
+            });
+          }),
+
         setInputMode: () => { },
 
         updateSessionStats: (stats) =>
@@ -599,6 +647,15 @@ export const useAppStore = create<AppState>()(
             })
           ),
 
+        setSettings: (data) =>
+          set((state) => ({
+            ...state,
+            settings: {
+              ...state.settings,
+              ...data,
+            },
+          })),
+
         resetAll: () =>
           set(() => createInitialSlices()),
       }),
@@ -609,6 +666,7 @@ export const useAppStore = create<AppState>()(
           briefing: cloneBriefing(state.briefing),
           sparringSession: cloneSparringSession(state.sparringSession),
           performance: clonePerformance(state.performance),
+          settings: { ...state.settings },
           projectStates: Object.fromEntries(
             Object.entries(state.projectStates).map(([scenarioId, snapshot]) => [
               scenarioId,

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import routes_scenarios, routes_chat, routes_evaluation, routes_history
+from app.api import routes_scenarios, routes_chat, routes_evaluation, routes_history, routes_tts
 from app.storage.session_store import init_db
 
 app = FastAPI(title="Sales Sparring Agent API", version="1.0.0")
@@ -24,6 +24,7 @@ app.include_router(routes_scenarios.router, prefix="/api")
 app.include_router(routes_chat.router, prefix="/api")
 app.include_router(routes_evaluation.router, prefix="/api")
 app.include_router(routes_history.router, prefix="/api")
+app.include_router(routes_tts.router, prefix="/api")
 
 
 @app.on_event("startup")
