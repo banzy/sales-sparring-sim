@@ -40,3 +40,6 @@ backend/app/storage
 /sparring.db
 /sparring.db-wal
 /sparring.db-shm
+
+# TTS audio cache
+backend/tts_cache/
