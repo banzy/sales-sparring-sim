@@ -672,18 +672,39 @@ export default function SparringArena() {
                     key={msg.id}
                     className={`flex gap-3 ${msg.role === 'seller' ? 'flex-row-reverse' : ''}`}
                   >
-                    <div
-                      className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
-                        msg.role === 'buyer'
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {msg.role === 'buyer' ? (
-                        <Bot className="h-4 w-4" />
-                      ) : (
-                        <User className="h-4 w-4" />
-                      )}
+                    <div className="relative shrink-0 group">
+                      <button
+                        onClick={() => handleSpeak(msg.id, msg.content)}
+                        className={`h-8 w-8 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${
+                          msg.role === 'buyer'
+                            ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/30'
+                            : 'bg-purple-500/20 text-purple-600 dark:text-purple-400 hover:bg-purple-500/30'
+                        }`}
+                        title={
+                          speakingMessageId === msg.id
+                            ? 'Stop speaking'
+                            : 'Read aloud'
+                        }
+                      >
+                        {msg.role === 'buyer' ? (
+                          <Bot className="h-4 w-4" />
+                        ) : (
+                          <User className="h-4 w-4" />
+                        )}
+                      </button>
+                      <div
+                        className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center transition-all shadow-md border-2 border-background ${
+                          speakingMessageId === msg.id
+                            ? 'opacity-100 bg-primary text-primary-foreground'
+                            : msg.role === 'buyer'
+                              ? 'opacity-0 group-hover:opacity-100 bg-blue-500 text-white'
+                              : 'opacity-0 group-hover:opacity-100 bg-purple-500 text-white'
+                        }`}
+                      >
+                        <Volume2
+                          className={`h-3 w-3 ${speakingMessageId === msg.id ? 'animate-pulse' : ''}`}
+                        />
+                      </div>
                     </div>
                     <div className={`flex-1 flex gap-2 items-start ${msg.role === 'seller' ? 'flex-row-reverse' : ''}`}>
                       <div
@@ -695,37 +716,20 @@ export default function SparringArena() {
                       >
                         {msg.content}
                       </div>
-                      {msg.role === 'buyer' && (
-                        <button
-                          onClick={() => handleSpeak(msg.id, msg.content)}
-                          className={`shrink-0 h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
-                            speakingMessageId === msg.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
-                          }`}
-                          title={
-                            speakingMessageId === msg.id
-                              ? 'Stop speaking'
-                              : 'Read aloud'
-                          }
-                        >
-                          <Volume2
-                            className={`h-4 w-4 ${speakingMessageId === msg.id ? 'animate-pulse' : ''}`}
-                          />
-                        </button>
-                      )}
                       {isLastSellerMessage && (
-                        <button
-                          onClick={() => {
-                            removeLastUserMessage();
-                            window.speechSynthesis.cancel();
-                            setSpeakingMessageId(null);
-                          }}
-                          className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center transition-colors bg-destructive/10 hover:bg-destructive/20 text-destructive hover:text-destructive"
-                          title="Delete last message"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className={`flex gap-2 shrink-0 ${msg.role === 'seller' ? 'flex-row-reverse' : ''}`}>
+                          <button
+                            onClick={() => {
+                              removeLastUserMessage();
+                              window.speechSynthesis.cancel();
+                              setSpeakingMessageId(null);
+                            }}
+                            className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors bg-destructive/10 hover:bg-destructive/20 text-destructive hover:text-destructive border border-destructive/30"
+                            title="Delete last message"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
