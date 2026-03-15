@@ -1,0 +1,11 @@
+{
+  "id": "20260315_084023",
+  "label": "SMT2",
+  "created_at": "2026-03-15T08:40:23.990982+00:00",
+  "table_counts": {
+    "sessions": 4,
+    "session_scores": 4,
+    "sparring_profiles": 1,
+    "scenarios": 1
+  }
+}
