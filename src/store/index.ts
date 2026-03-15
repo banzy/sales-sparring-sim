@@ -118,6 +118,7 @@ interface AppState {
   setInputMode: (mode: 'text' | 'recording' | 'processing') => void;
   updateSessionStats: (stats: Partial<SparringSession['sessionStats']>) => void;
   markObjectionTested: (objectionId: string) => void;
+  toggleObjectionTested: (objectionId: string) => void;
 
   setPerformance: (data: Partial<PerformanceData>) => void;
   setSettings: (data: Partial<AppSettings>) => void;
@@ -628,6 +629,19 @@ export const useAppStore = create<AppState>()(
                 ...state.sparringSession,
                 objectionChecklist: state.sparringSession.objectionChecklist.map((obj) =>
                   obj.id === objectionId ? { ...obj, tested: true } : cloneObjection(obj)
+                ),
+              },
+            })
+          ),
+
+        toggleObjectionTested: (objectionId) =>
+          set((state) =>
+            syncActiveProjectState({
+              ...state,
+              sparringSession: {
+                ...state.sparringSession,
+                objectionChecklist: state.sparringSession.objectionChecklist.map((obj) =>
+                  obj.id === objectionId ? { ...obj, tested: !obj.tested } : cloneObjection(obj)
                 ),
               },
             })

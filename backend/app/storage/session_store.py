@@ -762,6 +762,21 @@ def get_global_performance(project_id: str) -> dict | None:
         db.close()
 
 
+def delete_session(session_id: str) -> bool:
+    """Delete a session and its scores. Returns True if the session existed."""
+    db = _make_session()
+    try:
+        session = db.query(Session).filter_by(id=session_id).first()
+        if not session:
+            return False
+        db.query(SessionScore).filter_by(session_id=session_id).delete()
+        db.delete(session)
+        db.commit()
+        return True
+    finally:
+        db.close()
+
+
 def save_project_documents(project_id: str, docs: list[dict]) -> list[dict]:
     """
     Persist uploaded document metadata for a project.

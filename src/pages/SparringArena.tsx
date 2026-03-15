@@ -22,10 +22,20 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore, type Message } from '@/store';
 import { api, type SessionSummary } from '@/lib/api';
-import { getSessionDisplayState } from '@/lib/sessionTimeline';
+import { getSessionDisplayState, type NumberedSessionSummary } from '@/lib/sessionTimeline';
 import { useToast } from '@/hooks/use-toast';
 
 type InputMode = 'text' | 'recording' | 'processing';
@@ -79,6 +89,7 @@ export default function SparringArena() {
     startSparringSession,
     endSparringSession,
     updateSessionStats,
+    toggleObjectionTested,
   } = useAppStore();
 
   const [input, setInput] = useState('');
@@ -91,6 +102,7 @@ export default function SparringArena() {
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null);
   const [pastSessions, setPastSessions] = useState<SessionSummary[]>([]);
   const [pastSessionsLoaded, setPastSessionsLoaded] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<NumberedSessionSummary | null>(null);
   const [selectedPastSessionId, setSelectedPastSessionId] = useState<
     string | null
   >(null);
@@ -898,9 +910,17 @@ export default function SparringArena() {
                   cumulativeCompletedObjections.has(obj.id);
                 const isTested = obj.tested || isCompletedFromHistory;
                 return (
-                  <div
+                  <button
                     key={obj.id}
-                    className="flex items-center gap-2.5 text-xs"
+                    type="button"
+                    disabled={isReadOnlyView}
+                    onClick={() => !isReadOnlyView && toggleObjectionTested(obj.id)}
+                    className={`w-full flex items-center gap-2.5 text-xs text-left rounded-md px-1 py-0.5 -mx-1 transition-colors ${
+                      isReadOnlyView
+                        ? 'cursor-default'
+                        : 'cursor-pointer hover:bg-hud-foreground/5 active:bg-hud-foreground/10'
+                    }`}
+                    title={isReadOnlyView ? undefined : isTested ? 'Click to unmark' : 'Click to mark as raised'}
                   >
                     {isTested ? (
                       <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
@@ -916,7 +936,7 @@ export default function SparringArena() {
                     >
                       {obj.title}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -1027,35 +1047,44 @@ export default function SparringArena() {
                 </p>
                 <div className="space-y-2">
                   {sessionTimeline.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedTurn(null);
-                        setSelectedPastSessionId(s.id);
-                      }}
-                      className={`w-full text-left flex items-center justify-between p-2 rounded-lg text-xs transition-colors ${
-                        selectedPastSessionId === s.id
-                          ? 'bg-primary/10 border border-primary/30'
-                          : 'bg-muted/40 hover:bg-muted/70'
-                      }`}
-                    >
-                      <span className="text-hud-foreground/70 font-medium">
-                        Session {s.sessionNumber}
-                      </span>
-                      <Badge
-                        variant={
-                          s.overall_score && s.overall_score >= 75
-                            ? 'default'
-                            : s.overall_score && s.overall_score >= 50
-                              ? 'secondary'
-                              : 'destructive'
-                        }
-                        className="font-mono text-[10px] rounded px-1.5 py-0"
+                    <div key={s.id} className="flex items-center gap-1.5 group/session">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTurn(null);
+                          setSelectedPastSessionId(s.id);
+                        }}
+                        className={`flex-1 text-left flex items-center justify-between p-2 rounded-lg text-xs transition-colors ${
+                          selectedPastSessionId === s.id
+                            ? 'bg-primary/10 border border-primary/30'
+                            : 'bg-muted/40 hover:bg-muted/70'
+                        }`}
                       >
-                        {s.overall_score}
-                      </Badge>
-                    </button>
+                        <span className="text-hud-foreground/70 font-medium">
+                          Session {s.sessionNumber}
+                        </span>
+                        <Badge
+                          variant={
+                            s.overall_score && s.overall_score >= 75
+                              ? 'default'
+                              : s.overall_score && s.overall_score >= 50
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                          className="font-mono text-[10px] rounded px-1.5 py-0"
+                        >
+                          {s.overall_score}
+                        </Badge>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSessionToDelete(s)}
+                        className="opacity-0 group-hover/session:opacity-100 transition-opacity p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Delete session"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1079,6 +1108,41 @@ export default function SparringArena() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!sessionToDelete} onOpenChange={(open) => { if (!open) setSessionToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Session {sessionToDelete?.sessionNumber}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the session and its evaluation scores. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!sessionToDelete) return;
+                try {
+                  await api.deleteSession(sessionToDelete.id);
+                  setPastSessions((prev) => prev.filter((s) => s.id !== sessionToDelete.id));
+                  if (selectedPastSessionId === sessionToDelete.id) {
+                    setSelectedPastSessionId(null);
+                    setPastSessionMessages(null);
+                  }
+                  toast({ title: `Session ${sessionToDelete.sessionNumber} deleted` });
+                } catch {
+                  toast({ title: 'Failed to delete session', variant: 'destructive' });
+                } finally {
+                  setSessionToDelete(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

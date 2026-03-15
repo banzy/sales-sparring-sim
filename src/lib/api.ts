@@ -300,6 +300,14 @@ export const api = {
         return await res.json() as SessionDetail;
     },
 
+    /** Permanently delete a session and its scores */
+    async deleteSession(sessionId: string): Promise<void> {
+        const res = await fetch(`${API_BASE}/sessions/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error(`API error: ${res.statusText}`);
+    },
+
     /** Generate an AI-suggested seller response grounded in full context */
     async suggestResponse(
         scenarioId: string,
