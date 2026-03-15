@@ -43,3 +43,4 @@ backend/app/storage
 
 # TTS audio cache
 tts_cache/
+snapshots/
