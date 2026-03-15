@@ -1,11 +1,29 @@
 """Simulates an adversarial B2B buyer in a sparring session."""
 from __future__ import annotations
-import json
+
 from app.core.llm_client import LLMClient
 from app.models.schemas import ChatMessage, SparringChatResponse
 from app.prompts.sparring import build_sparring_system_prompt
 
 _llm = LLMClient()
+
+
+def _normalize_objections_triggered(scenario: dict, raw: list) -> list[dict]:
+    """Coerce LLM output to list of {id, title} using scenario objections."""
+    objections_by_id = {str(o.get("id")): o for o in scenario.get("objections", []) if o.get("id")}
+    result = []
+    for item in raw or []:
+        if isinstance(item, dict) and item.get("id") and item.get("title"):
+            result.append({"id": str(item["id"]), "title": str(item["title"])})
+            continue
+        oid = item.get("id") if isinstance(item, dict) else item
+        if oid is None and isinstance(item, str):
+            oid = item
+        if oid is not None:
+            obj = objections_by_id.get(str(oid))
+            if obj and obj.get("title"):
+                result.append({"id": str(obj["id"]), "title": str(obj["title"])})
+    return result
 
 
 def next_turn(
@@ -27,7 +45,7 @@ def next_turn(
 
     raw_response = _llm.generate_json(sys_prompt, context_str)
     
-    # Ensure it matches schema shape
+    # Ensure it matches schema shape; normalize objections to {id, title} using scenario
     return {
         "buyer_response": raw_response.get("buyer_response", "I'm not sure what you mean by that."),
         "turn_feedback": raw_response.get("turn_feedback", {
@@ -35,5 +53,7 @@ def next_turn(
             "comment": "Failed to parse feedback.",
             "weakness_tags": []
         }),
-        "objections_triggered": raw_response.get("objections_triggered", []),
+        "objections_triggered": _normalize_objections_triggered(
+            scenario, raw_response.get("objections_triggered", [])
+        ),
     }
