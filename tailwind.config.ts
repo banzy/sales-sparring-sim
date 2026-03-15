@@ -15,7 +15,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Aileron', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Proxima Nova', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['IBM Plex Mono', 'monospace'],
       },
       colors: {
