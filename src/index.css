@@ -164,7 +164,7 @@
 .lcd-clock {
   font-family: 'lcd', monospace;
   font-size: 18px;
-  color: rgb(23, 37, 115);
+  color: rgba(0, 179, 255, 1);
   letter-spacing: 2px;
   display: flex;
   align-items: baseline;

@@ -225,6 +225,8 @@ export default function ContextSetup() {
                       <SelectItem value="retail">Retail / E-Commerce</SelectItem>
                       <SelectItem value="energy">Energy</SelectItem>
                       <SelectItem value="airlines">Airlines</SelectItem>
+                      <SelectItem value="software">Software</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
