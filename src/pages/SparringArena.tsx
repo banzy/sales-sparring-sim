@@ -375,8 +375,20 @@ export default function SparringArena() {
     try {
       // Include the message we just added to state, along with previous history
       const historyToSend = [...sparringSession.messages, newMsg];
+      const testedIds = [
+        ...new Set([
+          ...sparringSession.objectionChecklist.filter((o) => o.tested).map((o) => o.id),
+          ...cumulativeCompletedObjections,
+        ]),
+      ];
 
-      const response = await api.sparringChat(scenarioId, historyToSend, text);
+      const response = await api.sparringChat(
+        scenarioId,
+        scenarioId,
+        historyToSend,
+        text,
+        testedIds,
+      );
 
       const buyerMsg: Message = {
         id: historyToSend.length + 1,

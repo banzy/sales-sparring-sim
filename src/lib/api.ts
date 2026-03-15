@@ -202,17 +202,20 @@ export const api = {
     /** Send a message to the adversarial buyer and get a reply */
     async sparringChat(
         scenarioId: string,
+        projectId: string,
         history: Message[],
-        userReply: string
+        userReply: string,
+        testedObjectionIds: string[] = []
     ): Promise<{ buyer_response: string, turn_feedback: { handled_well: boolean; comment: string; weakness_tags: string[] }, objections_triggered: Array<{ id: string; title: string }> }> {
         const res = await fetch(`${API_BASE}/sparring_chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 scenario_id: scenarioId,
-                project_id: scenarioId,
+                project_id: projectId,
                 conversation_history: history.filter(m => m.role === "buyer" || m.role === "seller"),
                 user_reply: userReply,
+                tested_objection_ids: testedObjectionIds,
             }),
         });
 

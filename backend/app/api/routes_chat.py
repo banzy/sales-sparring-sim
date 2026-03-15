@@ -30,6 +30,8 @@ def sparring_chat(request: SparringChatRequest):
             profile=project_profile,
             history=history,
             user_reply=request.user_reply,
+            tested_objection_ids=request.tested_objection_ids or [],
+            project_id=request.project_id,
         )
         
         # We don't save the transcript incrementally here to DB, we'll do it at the end 

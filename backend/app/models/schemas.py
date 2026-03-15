@@ -75,6 +75,7 @@ class SparringChatRequest(BaseModel):
     project_id: str
     conversation_history: list[ChatMessage] = []
     user_reply: str
+    tested_objection_ids: list[str] = []
 
 
 class ObjectionTriggered(BaseModel):
