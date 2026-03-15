@@ -386,6 +386,7 @@ export default function SparringArena() {
       };
 
       addMessage(buyerMsg);
+      // Do not auto-speak (TTS) the buyer response; only when user clicks "Read aloud" on a message.
 
       // Update objections triggered
       if (
@@ -1024,7 +1025,7 @@ export default function SparringArena() {
                 <span className="block text-hud-foreground font-semibold">
                   Current Session
                 </span>
-                <span className="block text-[10px] uppercase tracking-widest text-primary/70 font-mono">
+                <span className="block text-[10px] uppercase tracking-widest text-[rgba(9,91,119,0.7)] font-mono font-extrabold">
                   Session {currentSessionNumber}
                 </span>
               </div>
