@@ -28,6 +28,7 @@ Generate a complete sales scenario JSON with this exact structure:
 Original user input:
 - Company: {{client_name}}
 - Sector: {{sector}}
+- Buyer persona: {{buyer_persona}}
 - Requirements / pain points: {{requirements}}
 
 Perplexity client research:
@@ -35,6 +36,8 @@ Perplexity client research:
 
 Requirements:
 - Make the scenario clearly reflect the researched company context.
+- Keep `client_profile.name` exactly equal to the requested company name.
+- Use the requested buyer persona when one is provided.
 - Keep the value proposition aligned to the user's offer and pain points.
 - Generate exactly 4 or 5 realistic objections.
 - Ensure the buying constraints are concrete and meeting-ready.

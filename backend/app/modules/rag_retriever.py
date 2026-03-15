@@ -21,7 +21,7 @@ def retrieve_context(
 
 def build_context_for_scenario(scenario: dict, query: str, project_id: str | None = None) -> list[dict]:
     """Build a targeted retrieval query enriched with scenario metadata, optionally scoped to a project."""
-    sector = scenario.get("client_profile", {}).get("buyer_persona", "")
+    sector = scenario.get("generation_context", {}).get("sector", "")
     enriched_query = f"{query} client sector:{sector}"
     
     filters = {"project_id": project_id} if project_id else None
@@ -36,7 +36,7 @@ def format_context(chunks: list[dict]) -> str:
     parts = []
     for i, chunk in enumerate(chunks, 1):
         meta = chunk.get("metadata", {})
-        label = meta.get("title", meta.get("doc_type", f"Document {i}"))
+        label = meta.get("title", meta.get("filename", meta.get("doc_type", f"Document {i}")))
         parts.append(f"[{i}] {label}\n{chunk['text']}")
 
     return "\n\n---\n\n".join(parts)

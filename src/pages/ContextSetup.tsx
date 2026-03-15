@@ -88,13 +88,25 @@ export default function ContextSetup() {
   };
 
   const handleProcess = async (mode: 'upload' | 'synthetic' | 'demo') => {
+    const trimmedClientName = clientName.trim();
+    const trimmedPainPoints = painPoints.trim();
+
+    if (mode === 'synthetic' && (!trimmedClientName || !industry)) {
+      toast({
+        variant: "destructive",
+        title: "Missing required fields",
+        description: "Target client name and industry are required to generate a synthetic client.",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'synthetic' || mode === 'demo') {
         const fetchMethod = mode === 'demo'
           ? api.loadDemoClient()
-          : api.generateClient(clientName, industry, painPoints);
+          : api.generateClient(trimmedClientName, industry, trimmedPainPoints, buyerPersona);
 
         const briefingData = await fetchMethod;
 
@@ -113,9 +125,9 @@ export default function ContextSetup() {
 
         activateProject(briefingData.scenario_id, {
           mode: 'synthetic', // Keep the rest of the app thinking it's a synthetic scenario
-          clientName: mode === 'demo' ? 'SmartWings' : clientName,
+          clientName: mode === 'demo' ? 'SmartWings' : trimmedClientName,
           industry: mode === 'demo' ? 'airlines' : industry,
-          painPoints: mode === 'demo' ? 'Pitching Ciklum AI Passenger Tracking' : painPoints,
+          painPoints: mode === 'demo' ? 'Pitching Ciklum AI Passenger Tracking' : trimmedPainPoints,
         });
 
         // Remove scenario_id from briefing before storing it as the types mismatch slightly

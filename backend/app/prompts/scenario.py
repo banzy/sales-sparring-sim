@@ -52,6 +52,7 @@ def build_scenario_user_prompt(
     client_name: str,
     sector: str,
     requirements: str = "",
+    buyer_persona: str = "",
     client_research: dict[str, Any] | None = None,
 ) -> str:
     research_json = json.dumps(client_research or {}, indent=2, ensure_ascii=True)
@@ -61,6 +62,7 @@ def build_scenario_user_prompt(
             "client_name": client_name,
             "sector": sector or "Unknown",
             "requirements": requirements or "Not specified",
+            "buyer_persona": buyer_persona or "Not specified",
             "client_research_json": research_json,
         },
     )

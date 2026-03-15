@@ -106,11 +106,21 @@ export const api = {
     },
 
     /** Generate a new synthetic client scenario */
-    async generateClient(clientName: string, sector: string, requirements: string): Promise<BriefingData & { scenario_id: string }> {
+    async generateClient(
+        clientName: string,
+        sector: string,
+        requirements: string,
+        buyerPersona?: string,
+    ): Promise<BriefingData & { scenario_id: string }> {
         const res = await fetch(`${API_BASE}/generate_synthetic_client`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_name: clientName, sector, requirements }),
+            body: JSON.stringify({
+                client_name: clientName,
+                sector,
+                requirements,
+                buyer_persona: buyerPersona,
+            }),
         });
 
         if (!res.ok) {

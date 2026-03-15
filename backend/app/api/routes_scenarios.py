@@ -126,6 +126,7 @@ def generate_synthetic_client(request: GenerateClientRequest):
             client_name=request.client_name,
             sector=request.sector,
             requirements=request.requirements,
+            buyer_persona=request.buyer_persona,
         )
         
         # Add difficulties explicitly if the LLM forgot
@@ -266,7 +267,9 @@ async def _read_and_normalise_files(files: List[UploadFile]) -> list[dict]:
                 "doc_id": doc_id,
                 "text": text,
                 "project_id": None,  # filled by caller
+                "doc_type": "uploaded_document",
                 "filename": filename,
+                "title": filename,
                 "file_type": suffix or "txt",
                 "file_size": len(raw),
             }

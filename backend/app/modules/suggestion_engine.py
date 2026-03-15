@@ -46,14 +46,14 @@ def _retrieve_docs(
     top_k: int = 5,
 ) -> str:
     """
-    Retrieve uploaded project documents (no doc_type filter — these are user
-    knowledge files that don't carry the internal doc_type tag).
+    Retrieve uploaded project documents only.
     """
     try:
-        chunks = rag_retriever.build_context_for_scenario(
-            scenario={},   # enriched query already handles sector
-            query=query,
-            project_id=project_id,
+        query_vector = _llm.embed_single(query)
+        chunks = vector_store.search(
+            query_vector,
+            top_k=top_k,
+            filters={"project_id": project_id, "doc_type": "uploaded_document"},
         )
         return rag_retriever.format_context(chunks)
     except Exception:

@@ -54,8 +54,10 @@ def index_scenario(project_id: str, scenario: dict) -> None:
     try:
         client_profile = scenario.get("client_profile", {})
         client_name = client_profile.get("name", "Unknown")
-        sector = scenario.get("generation_context", {}).get("sector", "")
-        buyer_persona = client_profile.get("buyer_persona", "")
+        generation_context = scenario.get("generation_context", {})
+        sector = generation_context.get("sector", "")
+        buyer_persona = client_profile.get("buyer_persona", "") or generation_context.get("buyer_persona", "")
+        requirements = generation_context.get("requirements", "")
         value_prop = scenario.get("value_proposition", "")
 
         chunks: list[dict] = []
@@ -68,6 +70,7 @@ def index_scenario(project_id: str, scenario: dict) -> None:
             f"Buyer Persona: {buyer_persona}\n"
             f"Budget Cycle: {client_profile.get('budget_cycle', '')}\n"
             f"Decision Timeline: {client_profile.get('decision_timeline', '')}\n"
+            f"Requirements / Pain Points: {requirements}\n"
             f"Value Proposition: {value_prop}"
         )
         chunks.append({

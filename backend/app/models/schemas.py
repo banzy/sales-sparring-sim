@@ -50,6 +50,7 @@ class GenerateClientRequest(BaseModel):
     client_name: str = Field(..., description="Target client company name")
     sector: str = Field(..., description="Industry / sector")
     requirements: str = Field("", description="Specific pain points or requirements")
+    buyer_persona: str = Field("", description="Preferred buyer persona for the generated scenario")
 
 
 class GenerateClientResponse(BaseModel):
