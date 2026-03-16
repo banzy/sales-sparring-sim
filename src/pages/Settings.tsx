@@ -1,13 +1,34 @@
 import { useState, useEffect } from 'react';
-import { Volume2, Database, Save, RotateCcw, Trash2, Clock, RefreshCw, FileText } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Volume2,
+  Database,
+  Save,
+  RotateCcw,
+  Trash2,
+  Clock,
+  RefreshCw,
+  FileText,
+} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAppStore } from '@/store';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,7 +77,9 @@ function formatSize(bytes: number): string {
 
 export default function Settings() {
   const { settings, setSettings } = useAppStore();
-  const [testingVoice, setTestingVoice] = useState<'buyer' | 'seller' | null>(null);
+  const [testingVoice, setTestingVoice] = useState<'buyer' | 'seller' | null>(
+    null,
+  );
 
   // Snapshot state
   const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([]);
@@ -120,7 +143,9 @@ export default function Settings() {
     setRestoringId(id);
     setSnapshotError(null);
     try {
-      const res = await fetch(`/api/snapshots/${id}/restore`, { method: 'POST' });
+      const res = await fetch(`/api/snapshots/${id}/restore`, {
+        method: 'POST',
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setSnapshotError(data.detail || 'Failed to restore snapshot.');
@@ -174,11 +199,13 @@ export default function Settings() {
     const text =
       target === 'buyer'
         ? "Hello! This is a test of the text-to-speech system. I'm your AI buyer persona."
-        : "Hello! This is a test of my voice as the seller.";
+        : 'Hello! This is a test of my voice as the seller.';
     const voiceId =
       target === 'buyer'
         ? settings.openaiBuyerVoice || settings.openaiVoice
-        : settings.openaiSellerVoice || settings.openaiBuyerVoice || settings.openaiVoice;
+        : settings.openaiSellerVoice ||
+          settings.openaiBuyerVoice ||
+          settings.openaiVoice;
 
     if (settings.voiceProvider === 'browser') {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -249,18 +276,32 @@ export default function Settings() {
             >
               <div className="space-y-4">
                 <div className="flex items-start space-x-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value="browser" id="browser" className="mt-1" />
+                  <RadioGroupItem
+                    value="browser"
+                    id="browser"
+                    className="mt-1"
+                  />
                   <div className="flex-1">
-                    <Label htmlFor="browser" className="font-semibold cursor-pointer">
+                    <Label
+                      htmlFor="browser"
+                      className="font-semibold cursor-pointer"
+                    >
                       Browser Voice (Free)
                     </Label>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Uses your browser's built-in text-to-speech. Works offline, but sounds robotic.
+                      Uses your browser's built-in text-to-speech. Works
+                      offline, but sounds robotic.
                     </p>
                     <div className="flex gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">Free</Badge>
-                      <Badge variant="outline" className="text-xs">Offline</Badge>
-                      <Badge variant="secondary" className="text-xs">Robotic</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Free
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Offline
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        Robotic
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -268,16 +309,26 @@ export default function Settings() {
                 <div className="flex items-start space-x-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="openai" id="openai" className="mt-1" />
                   <div className="flex-1">
-                    <Label htmlFor="openai" className="font-semibold cursor-pointer">
+                    <Label
+                      htmlFor="openai"
+                      className="font-semibold cursor-pointer"
+                    >
                       OpenAI TTS (Premium)
                     </Label>
                     <p className="text-sm text-muted-foreground mt-1">
-                      High-quality, natural-sounding voices. Requires API key and costs ~$0.015 per 1,000 characters.
+                      High-quality, natural-sounding voices. Requires API key
+                      and costs ~$0.015 per 1,000 characters.
                     </p>
                     <div className="flex gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">$0.015/1K chars</Badge>
-                      <Badge variant="outline" className="text-xs">Natural</Badge>
-                      <Badge variant="default" className="text-xs">Recommended</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        $0.015/1K chars
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Natural
+                      </Badge>
+                      <Badge variant="default" className="text-xs">
+                        Recommended
+                      </Badge>
                     </div>
                     {settings.voiceProvider === 'openai' && (
                       <div className="mt-3 grid grid-cols-2 gap-4">
@@ -303,19 +354,30 @@ export default function Settings() {
                               />
                             </Button>
                             <Select
-                              value={settings.openaiBuyerVoice || settings.openaiVoice}
+                              value={
+                                settings.openaiBuyerVoice ||
+                                settings.openaiVoice
+                              }
                               onValueChange={(value) =>
-                                setSettings({ openaiBuyerVoice: value, openaiVoice: value })
+                                setSettings({
+                                  openaiBuyerVoice: value,
+                                  openaiVoice: value,
+                                })
                               }
                             >
-                              <SelectTrigger id="voice-select-buyer" className="flex-1">
+                              <SelectTrigger
+                                id="voice-select-buyer"
+                                className="flex-1"
+                              >
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 {OPENAI_VOICES.map((voice) => (
                                   <SelectItem key={voice.id} value={voice.id}>
                                     <div className="flex flex-col">
-                                      <span className="font-medium">{voice.name}</span>
+                                      <span className="font-medium">
+                                        {voice.name}
+                                      </span>
                                       <span className="text-xs text-muted-foreground">
                                         {voice.description}
                                       </span>
@@ -354,16 +416,23 @@ export default function Settings() {
                                 settings.openaiBuyerVoice ||
                                 settings.openaiVoice
                               }
-                              onValueChange={(value) => setSettings({ openaiSellerVoice: value })}
+                              onValueChange={(value) =>
+                                setSettings({ openaiSellerVoice: value })
+                              }
                             >
-                              <SelectTrigger id="voice-select-seller" className="flex-1">
+                              <SelectTrigger
+                                id="voice-select-seller"
+                                className="flex-1"
+                              >
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 {OPENAI_VOICES.map((voice) => (
                                   <SelectItem key={voice.id} value={voice.id}>
                                     <div className="flex flex-col">
-                                      <span className="font-medium">{voice.name}</span>
+                                      <span className="font-medium">
+                                        {voice.name}
+                                      </span>
                                       <span className="text-xs text-muted-foreground">
                                         {voice.description}
                                       </span>
@@ -421,7 +490,9 @@ export default function Settings() {
                 disabled={snapshotsLoading}
                 title="Refresh snapshots"
               >
-                <RefreshCw className={`h-4 w-4 ${snapshotsLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${snapshotsLoading ? 'animate-spin' : ''}`}
+                />
               </Button>
             </div>
           </CardHeader>
@@ -432,7 +503,9 @@ export default function Settings() {
                 placeholder="Label (optional)"
                 value={snapshotLabel}
                 onChange={(e) => setSnapshotLabel(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !takingSnapshot && takeSnapshot()}
+                onKeyDown={(e) =>
+                  e.key === 'Enter' && !takingSnapshot && takeSnapshot()
+                }
                 className="flex-1"
               />
               <Button
@@ -477,7 +550,9 @@ export default function Settings() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         {snap.label && (
-                          <span className="font-medium text-sm truncate">{snap.label}</span>
+                          <span className="font-medium text-sm truncate">
+                            {snap.label}
+                          </span>
                         )}
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3 shrink-0" />
@@ -488,11 +563,19 @@ export default function Settings() {
                         <span className="text-xs text-muted-foreground">
                           {formatSize(snap.size_bytes)}
                         </span>
-                        {Object.entries(snap.table_counts).map(([table, count]) => (
-                          <span key={table} className="text-xs text-muted-foreground">
-                            {table}: <span className="font-medium text-foreground">{count}</span>
-                          </span>
-                        ))}
+                        {Object.entries(snap.table_counts).map(
+                          ([table, count]) => (
+                            <span
+                              key={table}
+                              className="text-xs text-muted-foreground"
+                            >
+                              {table}:{' '}
+                              <span className="font-medium text-foreground">
+                                {count}
+                              </span>
+                            </span>
+                          ),
+                        )}
                       </div>
                     </div>
 
@@ -516,12 +599,15 @@ export default function Settings() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Restore snapshot?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Restore snapshot?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will replace the current database with the snapshot taken on{' '}
+                              This will replace the current database with the
+                              snapshot taken on{' '}
                               <strong>{formatDate(snap.created_at)}</strong>
-                              {snap.label ? ` (${snap.label})` : ''}.{' '}
-                              All data added after that point will be lost.
+                              {snap.label ? ` (${snap.label})` : ''}. All data
+                              added after that point will be lost.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -555,11 +641,14 @@ export default function Settings() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete snapshot?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Delete snapshot?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
                               The snapshot from{' '}
                               <strong>{formatDate(snap.created_at)}</strong>
-                              {snap.label ? ` (${snap.label})` : ''} will be permanently deleted.
+                              {snap.label ? ` (${snap.label})` : ''} will be
+                              permanently deleted.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -588,10 +677,12 @@ export default function Settings() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Generated Post (Optional)
+                  App decription
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  A short social-style message created by your agent itself, style like LinkedIn
+                  For LinkedIn or another platform — you speaking to your
+                  community about what you built, how it works, and that it was
+                  created as part of the Ciklum AI Academy.
                 </CardDescription>
               </div>
               <Button
@@ -621,7 +712,7 @@ export default function Settings() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Click Generate to create a LinkedIn-style post about the Sales Sparring Agent.
+                Click Generate to create a post for LinkedIn
               </p>
             )}
           </CardContent>

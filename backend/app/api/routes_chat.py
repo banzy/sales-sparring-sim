@@ -91,7 +91,14 @@ def suggest_response(request: SuggestResponseRequest):
         raise HTTPException(status_code=500, detail="Unexpected server error.") from e
 
 
-GENERATE_POST_SYSTEM = """You are a professional social media copywriter. Write a short LinkedIn-style post (2-4 sentences) promoting the Sales Sparring Agent — an AI-powered B2B sales roleplay simulator that helps sellers practice against an adversarial AI buyer. Keep it engaging, professional, and suitable for LinkedIn. No hashtags. Output only the post text, nothing else."""
+GENERATE_POST_SYSTEM = """You are helping someone write a LinkedIn post (or for another professional platform). The post is the author speaking to their community — first person, "I built...", "I created...", etc.
+
+The post should explain:
+- What the Sales Sparring Agent does and how it was built
+- That it was created as part of the Ciklum AI Academy
+- (Optional) Include a mention or tag for @Ciklum
+
+Keep it professional, authentic, and concise (5–7 sentences). Write as the human author talking to their network. Output only the post text, nothing else."""
 
 
 @router.post("/generate_post")
@@ -101,7 +108,7 @@ def generate_post():
         llm = LLMClient(provider="openai")
         post = llm.generate(
             system_prompt=GENERATE_POST_SYSTEM,
-            user_prompt="Write the LinkedIn post now.",
+            user_prompt="Write the LinkedIn post as the author speaking to their community about what they built.",
         )
         return {"post": post.strip()}
     except LLMServiceError as e:
