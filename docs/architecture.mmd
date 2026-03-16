@@ -1,7 +1,60 @@
 %% Sales Sparring Agent — Architecture
-%% How to run: bun dev:all (frontend :8080, backend :8090)
-%% Tech: Vite/React, FastAPI, OpenAI, Perplexity, Qdrant, SQLite
+%% See README.md for product overview
 
+## How to Run
+
+```sh
+git clone https://github.com/banzy/sales-sparring-sim
+cd sales-sparring-sim
+bun install
+
+# Configure backend/.env: OPENAI_API_KEY, PERPLEXITY_API_KEY
+# Optional: QDRANT_URL, PORT (default 8090)
+
+bun dev:all
+```
+
+- **Frontend**: http://localhost:8080
+- **Backend**: http://localhost:8090
+- **API docs**: http://localhost:8090/docs
+
+## Technologies & Libraries
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | Vite, TypeScript, React, shadcn-ui, Tailwind CSS |
+| **State** | Zustand |
+| **Data** | React Query |
+| **Backend** | FastAPI, Python, SQLAlchemy |
+| **AI** | OpenAI (Chat, TTS-1, Whisper), Perplexity AI |
+| **Vector DB** | Qdrant |
+| **Relational DB** | SQLite |
+
+## TTS Audio Caching
+
+OpenAI TTS responses are cached on disk in `tts_cache/` using an MD5 hash of `voice:text`. On cache hit, the backend serves the stored MP3 without calling the API, avoiding AI regeneration and reducing cost for repeated "Read Aloud" on the same message.
+
+## Data Flow
+
+1. **Scenario creation** → Perplexity (research) + OpenAI (synthesis) → SQLite + Qdrant
+2. **Sparring** → Sparring Agent + Suggestion Engine read from Qdrant; voice via Whisper (STT) and TTS
+3. **Evaluation** → Transcript → Evaluation Engine → scores to SQLite, embeddings to Qdrant
+4. **Learning loop** → `learning_progress` chunks inform next session: buyer targets weak areas, Coach suggests hints
+
+## API Endpoints
+
+| Endpoint | Purpose |
+|---------|---------|
+| `/api/scenarios` | Create, load scenarios |
+| `/api/chat` | Sparring turns, suggestions |
+| `/api/evaluate_session` | Session scoring |
+| `/api/tts` | Text-to-speech (cached) |
+| `/api/stt` | Speech-to-text (Whisper) |
+| `/api/snapshots` | DB backup/restore |
+
+## System Diagram
+
+```mermaid
 flowchart TB
     subgraph Frontend["Frontend (Vite + React + Zustand)"]
         ContextSetup[Context Setup]
@@ -60,3 +113,4 @@ flowchart TB
 
     Performance --> SQLite
     History --> SQLite
+```
