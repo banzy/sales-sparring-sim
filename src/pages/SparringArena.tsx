@@ -36,9 +36,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore, type Message } from '@/store';
 import { api, type SessionSummary } from '@/lib/api';
 import { getSessionDisplayState, type NumberedSessionSummary } from '@/lib/sessionTimeline';
+import { getArenaStatusLabel, type ArenaInputMode } from '@/lib/sparringArenaState';
 import { useToast } from '@/hooks/use-toast';
 
-type InputMode = 'text' | 'recording' | 'processing';
+type InputMode = ArenaInputMode;
 
 function RecordingTimer({ startTime }: { startTime: number }) {
   const [elapsed, setElapsed] = useState(0);
@@ -176,6 +177,7 @@ export default function SparringArena() {
 
   const contextSetup = useAppStore((state) => state.contextSetup);
   const scenarioId = contextSetup.scenarioId;
+  const statusLabel = getArenaStatusLabel(inputMode);
 
   // Derive cumulative objection progress across all completed sessions for this scenario.
   const cumulativeCompletedObjections = useMemo(() => {
@@ -350,6 +352,8 @@ export default function SparringArena() {
   }, []);
 
   const handleSend = async (content?: string) => {
+    if (inputMode !== 'text') return;
+
     const text = content || input.trim();
     if (!text) return;
 
@@ -370,7 +374,7 @@ export default function SparringArena() {
 
     addMessage(newMsg);
     setInput('');
-    setInputMode('processing');
+    setInputMode('responding');
 
     try {
       // Include the message we just added to state, along with previous history
@@ -504,7 +508,7 @@ export default function SparringArena() {
           .getTracks()
           .forEach((track) => track.stop());
 
-        setInputMode('processing');
+        setInputMode('transcribing');
 
         try {
           // Send blob via HTTP to backend
@@ -540,7 +544,7 @@ export default function SparringArena() {
     }
   };
 
-  const handleSpeak = async (messageId: number, text: string) => {
+  const handleSpeak = async (messageId: number, text: string, role: 'buyer' | 'seller') => {
     try {
       if (speakingMessageId === messageId) {
         window.speechSynthesis.cancel();
@@ -572,10 +576,16 @@ export default function SparringArena() {
       } else {
         // OpenAI TTS
         try {
+          const voiceId =
+            (role === 'buyer'
+              ? settings.openaiBuyerVoice || settings.openaiVoice
+              : settings.openaiSellerVoice ||
+                settings.openaiBuyerVoice ||
+                settings.openaiVoice);
           const response = await fetch('/api/tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text, voice: settings.openaiVoice }),
+            body: JSON.stringify({ text, voice: voiceId }),
           });
 
           if (!response.ok) {
@@ -699,7 +709,7 @@ export default function SparringArena() {
                   >
                     <div className="relative shrink-0 group">
                       <button
-                        onClick={() => handleSpeak(msg.id, msg.content)}
+                        onClick={() => handleSpeak(msg.id, msg.content, msg.role)}
                         className={`h-8 w-8 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${
                           msg.role === 'buyer'
                             ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/30'
@@ -853,12 +863,10 @@ export default function SparringArena() {
                   </>
                 )}
 
-                {inputMode === 'processing' && (
+                {statusLabel && (
                   <div className="flex-1 flex items-center justify-center gap-2 py-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm font-medium">
-                      Transcribing Voice...
-                    </span>
+                    <span className="text-sm font-medium">{statusLabel}</span>
                   </div>
                 )}
               </>

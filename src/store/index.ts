@@ -89,6 +89,8 @@ export interface PerformanceData {
 export interface AppSettings {
   voiceProvider: 'browser' | 'openai';
   openaiVoice: string;
+  openaiBuyerVoice?: string;
+  openaiSellerVoice?: string;
 }
 
 interface ProjectStateSnapshot {
@@ -360,6 +362,8 @@ function createDefaultSettings(): AppSettings {
   return {
     voiceProvider: 'browser',
     openaiVoice: 'alloy',
+    openaiBuyerVoice: 'alloy',
+    openaiSellerVoice: 'alloy',
   };
 }
 

@@ -56,7 +56,7 @@ function formatSize(bytes: number): string {
 
 export default function Settings() {
   const { settings, setSettings } = useAppStore();
-  const [testingVoice, setTestingVoice] = useState(false);
+  const [testingVoice, setTestingVoice] = useState<'buyer' | 'seller' | null>(null);
 
   // Snapshot state
   const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([]);
@@ -145,21 +145,28 @@ export default function Settings() {
     }
   };
 
-  const testVoice = async () => {
-    setTestingVoice(true);
-    const text = "Hello! This is a test of the text-to-speech system. I'm your AI buyer persona.";
-    
+  const testVoice = async (target: 'buyer' | 'seller') => {
+    setTestingVoice(target);
+    const text =
+      target === 'buyer'
+        ? "Hello! This is a test of the text-to-speech system. I'm your AI buyer persona."
+        : "Hello! This is a test of my voice as the seller.";
+    const voiceId =
+      target === 'buyer'
+        ? settings.openaiBuyerVoice || settings.openaiVoice
+        : settings.openaiSellerVoice || settings.openaiBuyerVoice || settings.openaiVoice;
+
     if (settings.voiceProvider === 'browser') {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onend = () => setTestingVoice(false);
-      utterance.onerror = () => setTestingVoice(false);
+      utterance.onend = () => setTestingVoice(null);
+      utterance.onerror = () => setTestingVoice(null);
       window.speechSynthesis.speak(utterance);
     } else {
       try {
         const response = await fetch('/api/tts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, voice: settings.openaiVoice }),
+          body: JSON.stringify({ text, voice: voiceId }),
         });
 
         if (!response.ok) {
@@ -169,21 +176,21 @@ export default function Settings() {
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
-        
+
         audio.onended = () => {
-          setTestingVoice(false);
+          setTestingVoice(null);
           URL.revokeObjectURL(audioUrl);
         };
-        
+
         audio.onerror = () => {
-          setTestingVoice(false);
+          setTestingVoice(null);
           URL.revokeObjectURL(audioUrl);
         };
 
         await audio.play();
       } catch (error) {
         console.error('[TTS Test] Error:', error);
-        setTestingVoice(false);
+        setTestingVoice(null);
       }
     }
   };
@@ -249,31 +256,99 @@ export default function Settings() {
                       <Badge variant="default" className="text-xs">Recommended</Badge>
                     </div>
                     {settings.voiceProvider === 'openai' && (
-                      <div className="mt-3 space-y-3">
+                      <div className="mt-3 grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="voice-select" className="text-xs font-medium mb-2 block">
-                            Voice Selection
-                          </Label>
-                          <Select
-                            value={settings.openaiVoice}
-                            onValueChange={(value) => setSettings({ openaiVoice: value })}
+                          <Label
+                            htmlFor="voice-select-buyer"
+                            className="text-xs font-medium mb-2 block"
                           >
-                            <SelectTrigger id="voice-select" className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {OPENAI_VOICES.map((voice) => (
-                                <SelectItem key={voice.id} value={voice.id}>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{voice.name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {voice.description}
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            Buyer voice
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => testVoice('buyer')}
+                              disabled={testingVoice !== null}
+                              title="Listen to buyer voice"
+                              className="h-10 w-10 shrink-0"
+                            >
+                              <Volume2
+                                className={`h-4 w-4 ${testingVoice === 'buyer' ? 'animate-pulse' : ''}`}
+                              />
+                            </Button>
+                            <Select
+                              value={settings.openaiBuyerVoice || settings.openaiVoice}
+                              onValueChange={(value) =>
+                                setSettings({ openaiBuyerVoice: value, openaiVoice: value })
+                              }
+                            >
+                              <SelectTrigger id="voice-select-buyer" className="flex-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {OPENAI_VOICES.map((voice) => (
+                                  <SelectItem key={voice.id} value={voice.id}>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{voice.name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {voice.description}
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label
+                            htmlFor="voice-select-seller"
+                            className="text-xs font-medium mb-2 block"
+                          >
+                            Your voice
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => testVoice('seller')}
+                              disabled={testingVoice !== null}
+                              title="Listen to your voice"
+                              className="h-10 w-10 shrink-0"
+                            >
+                              <Volume2
+                                className={`h-4 w-4 ${testingVoice === 'seller' ? 'animate-pulse' : ''}`}
+                              />
+                            </Button>
+                            <Select
+                              value={
+                                settings.openaiSellerVoice ||
+                                settings.openaiBuyerVoice ||
+                                settings.openaiVoice
+                              }
+                              onValueChange={(value) => setSettings({ openaiSellerVoice: value })}
+                            >
+                              <SelectTrigger id="voice-select-seller" className="flex-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {OPENAI_VOICES.map((voice) => (
+                                  <SelectItem key={voice.id} value={voice.id}>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{voice.name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {voice.description}
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -281,30 +356,6 @@ export default function Settings() {
                 </div>
               </div>
             </RadioGroup>
-
-            <div className="flex items-center justify-between pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
-                Test the selected voice
-              </p>
-              <Button
-                onClick={testVoice}
-                disabled={testingVoice}
-                variant="outline"
-                size="sm"
-              >
-                {testingVoice ? (
-                  <>
-                    <Volume2 className="h-4 w-4 mr-2 animate-pulse" />
-                    Playing...
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="h-4 w-4 mr-2" />
-                    Test Voice
-                  </>
-                )}
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
