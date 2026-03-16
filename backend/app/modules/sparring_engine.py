@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from app.core.llm_client import LLMClient
 from app.models.schemas import ChatMessage, SparringChatResponse
@@ -14,6 +15,66 @@ _llm = LLMClient()
 
 # Cap conversation history to this many messages to keep token usage bounded.
 HISTORY_CAP_MESSAGES = 16
+
+
+def _normalize_buyer_response(raw: Any) -> str:
+    """Ensure buyer dialogue is always a non-empty string."""
+    if isinstance(raw, str):
+        text = raw.strip()
+        if text:
+            return text
+    return "I'm not sure what you mean by that."
+
+
+def _coerce_bool(value: Any, default: bool = False) -> bool:
+    """Coerce common JSON-like boolean values, otherwise fall back safely."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y"}:
+            return True
+        if normalized in {"false", "0", "no", "n"}:
+            return False
+    return default
+
+
+def _normalize_weakness_tags(raw: Any) -> list[str]:
+    """Normalize weakness tags into a clean list of strings."""
+    if isinstance(raw, str):
+        tag = raw.strip()
+        return [tag] if tag else []
+    if not isinstance(raw, list):
+        return []
+
+    tags: list[str] = []
+    for item in raw:
+        if item is None:
+            continue
+        text = item.strip() if isinstance(item, str) else str(item).strip()
+        if text:
+            tags.append(text)
+    return tags
+
+
+def _normalize_turn_feedback(raw: Any) -> dict[str, Any]:
+    """Guarantee the hidden feedback object matches the API schema."""
+    raw_feedback = raw if isinstance(raw, dict) else {}
+    comment = raw_feedback.get("comment")
+    if isinstance(comment, str):
+        comment = comment.strip()
+    else:
+        comment = ""
+    if not comment:
+        comment = "Feedback unavailable."
+
+    return {
+        "handled_well": _coerce_bool(raw_feedback.get("handled_well"), default=False),
+        "comment": comment,
+        "weakness_tags": _normalize_weakness_tags(raw_feedback.get("weakness_tags", [])),
+    }
 
 
 def _normalize_objections_triggered(scenario: dict, raw: list) -> list[dict]:
@@ -124,12 +185,8 @@ def next_turn(
     
     # Ensure it matches schema shape; normalize objections to {id, title} using scenario
     return {
-        "buyer_response": raw_response.get("buyer_response", "I'm not sure what you mean by that."),
-        "turn_feedback": raw_response.get("turn_feedback", {
-            "handled_well": False,
-            "comment": "Failed to parse feedback.",
-            "weakness_tags": []
-        }),
+        "buyer_response": _normalize_buyer_response(raw_response.get("buyer_response")),
+        "turn_feedback": _normalize_turn_feedback(raw_response.get("turn_feedback")),
         "objections_triggered": _normalize_objections_triggered(
             scenario, raw_response.get("objections_triggered", [])
         ),

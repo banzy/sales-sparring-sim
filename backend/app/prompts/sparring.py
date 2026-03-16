@@ -43,7 +43,7 @@ Do NOT be overly helpful. Challenge weak claims. Demand proof. Always stay in ch
 
 Respond with valid JSON containing:
 1. `buyer_response`: Your exact dialogue as the buyer.
-2. `turn_feedback`: Hidden analysis of how the seller just did (`handled_well`, `comment` string, `weakness_tags` array).
+2. `turn_feedback`: Hidden analysis of how the seller just did (`handled_well` must be a JSON boolean `true` or `false`, `comment` string, `weakness_tags` array).
 3. `objections_triggered`: Array of objects `{"id": "...", "title": "..."}` for each objection you just raised (use the IDs and titles from the Pre-planned Objections list above)."""
 
 
