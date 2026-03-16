@@ -236,18 +236,20 @@ export const api = {
         return await res.json();
     },
 
-    /** Evaluate the entire session */
+    /** Evaluate the entire session and persist scores for the learning loop.
+     *  projectId defaults to scenarioId (they are identical in the current flow). */
     async evaluateSession(
         scenarioId: string,
         transcript: Message[],
         completedObjectionIds?: string[],
+        projectId?: string,
     ): Promise<PerformanceData> {
         const res = await fetch(`${API_BASE}/evaluate_session`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 scenario_id: scenarioId,
-                project_id: scenarioId,
+                project_id: projectId ?? scenarioId,   // explicit project scoping for learning loop
                 transcript: transcript.map(m => ({ role: m.role, content: m.content })),
                 completed_objections: completedObjectionIds ?? [],
             }),
