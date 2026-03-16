@@ -79,6 +79,20 @@ Each query targets a specific `doc_type`, ensuring precision retrieval over a mu
 
 Agents communicate implicitly via the shared persistence layer. The Sparring Agent generates dialogue and internal feedback; the Evaluation Engine processes this to create learning progress metrics; and finally, those metrics are embedded and retrieved by the Suggestion Engine in future sessions to tailor real-time hints to the seller's _personal_ learning trajectory.
 
+### Reinforced Agent Learning via `learning_progress`
+
+The Sparring Agent uses `learning_progress` to **adapt the adversarial buyer** to the seller's weaknesses, creating a curriculum that reinforces practice on areas that need the most work. Unlike static roleplay, each new session is informed by past performance, so the buyer becomes a moving target that deliberately challenges the seller where they struggle most.
+
+**The loop:**
+
+1. **Session ends** → The Evaluation Engine scores the session and identifies strengths, weaknesses, focus areas, and evolution analysis. It also recommends `next_focus_areas` for future practice.
+2. **Profile update** → The top 3 weaknesses are stored in the project profile as `priority_weaknesses`. The profile's `current_level` is adjusted: escalated when scores ≥ 75, reduced when scores < 50.
+3. **Vector indexing** → The knowledge indexer embeds `learning_progress` chunks into Qdrant. Each chunk contains the session number, current score, recommended focus areas, and priority weaknesses to address. These chunks are semantically searchable alongside `session_feedback`.
+4. **Next session** → The Sparring Agent retrieves both `session_feedback` and `learning_progress` via semantic search (queries like *"learning progress evolution focus areas priority weaknesses"*) and injects them into the buyer's system prompt as **seller background**. The buyer sees the seller's weaknesses and past feedback. Crucially, a **focus instruction** is added: *"Push particularly hard on these topics: {priority_weaknesses}"*.
+5. **Difficulty scaling** → The profile's `current_level` controls the buyer's attitude: `beginner` (friendly, collaborative), `intermediate` (professional but skeptical), `advanced` (firm, demanding, ROI-focused), `adversarial` (hostile, interrupts, challenges every claim). As the seller improves, the buyer becomes tougher; if performance drops, the buyer eases off.
+
+**Dual consumption:** Both the Sparring Agent and the Suggestion Engine consume `learning_progress`. The Sparring Agent uses it to *challenge* the seller on weak areas; the Suggestion Engine uses it to *coach* the seller with hints grounded in those same focus areas and past evolution. The result is a closed reinforcement loop: practice → evaluation → targeted challenge + targeted hints → improved practice.
+
 ---
 
 ## Voice Features
