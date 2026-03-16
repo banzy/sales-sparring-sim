@@ -1,5 +1,6 @@
 import logging
 from fastapi import APIRouter, HTTPException
+from pydantic import ValidationError
 from app.core.llm_client import LLMServiceError
 from app.models.schemas import (
     SparringChatRequest,
@@ -13,6 +14,24 @@ from app.storage import session_store
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _fallback_sparring_response(result: object) -> SparringChatResponse:
+    buyer_response = "I'm not sure what you mean by that."
+    if isinstance(result, dict):
+        raw_buyer_response = result.get("buyer_response")
+        if isinstance(raw_buyer_response, str) and raw_buyer_response.strip():
+            buyer_response = raw_buyer_response.strip()
+
+    return SparringChatResponse(
+        buyer_response=buyer_response,
+        turn_feedback={
+            "handled_well": False,
+            "comment": "Feedback unavailable.",
+            "weakness_tags": [],
+        },
+        objections_triggered=[],
+    )
 
 
 @router.post("/sparring_chat", response_model=SparringChatResponse)
@@ -36,7 +55,11 @@ def sparring_chat(request: SparringChatRequest):
         
         # We don't save the transcript incrementally here to DB, we'll do it at the end 
         # of the session in evaluation. The frontend tracks it in Zustand in realtime.
-        return result
+        try:
+            return SparringChatResponse.model_validate(result)
+        except ValidationError:
+            logger.exception("Invalid sparring response payload: %r", result)
+            return _fallback_sparring_response(result)
     except HTTPException:
         raise
     except LLMServiceError as e:

@@ -27,7 +27,8 @@ def main() -> None:
     load_dotenv(BACKEND_DIR / ".env")
 
     port = int(os.environ.get("PORT", "8090"))
-    reload_enabled = os.environ.get("UVICORN_RELOAD", "").lower() in {"1", "true", "yes"}
+    reload_env = os.environ.get("UVICORN_RELOAD")
+    reload_enabled = True if reload_env is None else reload_env.lower() in {"1", "true", "yes"}
     diagnostics = get_db_diagnostics()
 
     print("[backend] database_url:", diagnostics["database_url"])

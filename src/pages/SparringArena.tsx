@@ -36,7 +36,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore, type Message } from '@/store';
 import { api, type SessionSummary } from '@/lib/api';
 import { getSessionDisplayState, type NumberedSessionSummary } from '@/lib/sessionTimeline';
-import { getArenaStatusLabel, type ArenaInputMode } from '@/lib/sparringArenaState';
+import {
+  getArenaStatusLabel,
+  getLastSellerMessageId,
+  type ArenaInputMode,
+} from '@/lib/sparringArenaState';
 import { useToast } from '@/hooks/use-toast';
 
 type InputMode = ArenaInputMode;
@@ -206,6 +210,10 @@ export default function SparringArena() {
     const endOfTurn = turns.slice(0, activeTurnIndex + 1);
     return endOfTurn.flat();
   }, [isPastSessionView, pastSessionMessages, turns, activeTurnIndex]);
+  const lastEditableSellerMessageId = useMemo(
+    () => (isReadOnlyView ? null : getLastSellerMessageId(displayedMessages)),
+    [displayedMessages, isReadOnlyView],
+  );
 
   useEffect(() => {
     if (!sparringSession.isActive && !isPastSessionView) {
@@ -699,8 +707,7 @@ export default function SparringArena() {
               {displayedMessages.map((msg, idx) => {
                 const isLastSellerMessage = 
                   msg.role === 'seller' && 
-                  !isReadOnlyView &&
-                  idx === displayedMessages.length - 1;
+                  msg.id === lastEditableSellerMessageId;
                 
                 return (
                   <div
