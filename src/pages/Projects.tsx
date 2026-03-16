@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Building2,
   CalendarDays,
+  FileDown,
   FolderOpen,
   Loader2,
   MessageSquareWarning,
@@ -31,7 +32,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { api, type SessionSummary } from '@/lib/api';
+import { api, type SessionDetail, type SessionSummary } from '@/lib/api';
+import { exportProjectToPdf } from '@/lib/exportPdf';
 import {
   formatScenarioIdAsProjectName,
   resolveProjectName,
@@ -127,6 +129,9 @@ export default function Projects() {
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<ProjectSummary | null>(
+    null,
+  );
+  const [exportingProjectId, setExportingProjectId] = useState<string | null>(
     null,
   );
 
@@ -266,6 +271,47 @@ export default function Projects() {
   const handleDeleteClick = (project: ProjectSummary) => {
     setProjectToDelete(project);
     setDeleteDialogOpen(true);
+  };
+
+  const handleExportProject = async (project: ProjectSummary) => {
+    setExportingProjectId(project.scenarioId);
+    try {
+      let briefing = project.snapshot?.briefing ?? null;
+      if (!briefing) {
+        try {
+          const data = await api.loadScenario(project.scenarioId);
+          const { scenario_id: _sc, ...b } = data;
+          briefing = b;
+        } catch {
+          briefing = null;
+        }
+      }
+
+      const sessionDetails: SessionDetail[] = [];
+      for (const s of project.sessions) {
+        try {
+          const detail = await api.getSession(s.id);
+          sessionDetails.push(detail);
+        } catch {
+          sessionDetails.push({ ...s, transcript: [] });
+        }
+      }
+
+      await exportProjectToPdf({
+        projectLabel: project.label,
+        briefing,
+        sessions: sessionDetails,
+      });
+      toast({ title: 'PDF exported successfully' });
+    } catch (error) {
+      toast({
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'Could not generate PDF',
+        variant: 'destructive',
+      });
+    } finally {
+      setExportingProjectId(null);
+    }
   };
 
   const handleDeleteConfirm = () => {
@@ -867,6 +913,25 @@ export default function Projects() {
                         >
                           <CalendarDays className="mr-2 h-4 w-4" />
                           View Session History
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => void handleExportProject(project)}
+                          disabled={exportingProjectId === project.scenarioId}
+                          className="rounded-xl"
+                        >
+                          {exportingProjectId === project.scenarioId ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Exporting...
+                            </>
+                          ) : (
+                            <>
+                              <FileDown className="mr-2 h-4 w-4" />
+                              Export PDF
+                            </>
+                          )}
                         </Button>
 
                         <Button
