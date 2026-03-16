@@ -35,7 +35,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAppStore, type Message } from '@/store';
 import { api, type SessionSummary } from '@/lib/api';
-import { getSessionDisplayState, type NumberedSessionSummary } from '@/lib/sessionTimeline';
+import {
+  filterArenaVisibleSessions,
+  getSessionDisplayState,
+  type NumberedSessionSummary,
+} from '@/lib/sessionTimeline';
 import {
   getArenaStatusLabel,
   getLastSellerMessageId,
@@ -173,10 +177,9 @@ export default function SparringArena() {
   const isHistoricalView =
     !isPastSessionView && activeTurnIndex < latestTurnIndex;
   const isReadOnlyView = isPastSessionView || isHistoricalView;
-  const hasLiveProgress = sparringSession.sessionStats.exchanges > 0;
   const { currentSessionNumber, pastSessions: sessionTimeline } = useMemo(
-    () => getSessionDisplayState(pastSessions, hasLiveProgress),
-    [pastSessions, hasLiveProgress],
+    () => getSessionDisplayState(pastSessions),
+    [pastSessions],
   );
 
   const contextSetup = useAppStore((state) => state.contextSetup);
@@ -277,11 +280,12 @@ export default function SparringArena() {
           return;
         }
 
-        const projectSessions = list.filter(
-          (session) =>
-            session.overall_score !== null &&
-            (session.scenario_id === scenarioId ||
-              session.project_id === scenarioId),
+        const projectSessions = filterArenaVisibleSessions(
+          list.filter(
+            (session) =>
+              session.scenario_id === scenarioId ||
+              session.project_id === scenarioId,
+          ),
         );
         setPastSessions(projectSessions);
         setPastSessionsLoaded(true);
@@ -1091,18 +1095,27 @@ export default function SparringArena() {
                         <span className="text-hud-foreground/70 font-medium">
                           Session {s.sessionNumber}
                         </span>
-                        <Badge
-                          variant={
-                            s.overall_score && s.overall_score >= 75
-                              ? 'default'
-                              : s.overall_score && s.overall_score >= 50
-                                ? 'secondary'
-                                : 'destructive'
-                          }
-                          className="font-mono text-[10px] rounded px-1.5 py-0"
-                        >
-                          {s.overall_score}
-                        </Badge>
+                        {s.evaluation_insufficient ? (
+                          <Badge
+                            variant="outline"
+                            className="rounded px-1.5 py-0 text-[10px] uppercase tracking-wide"
+                          >
+                            Too Short
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant={
+                              s.overall_score !== null && s.overall_score >= 75
+                                ? 'default'
+                                : s.overall_score !== null && s.overall_score >= 50
+                                  ? 'secondary'
+                                  : 'destructive'
+                            }
+                            className="font-mono text-[10px] rounded px-1.5 py-0"
+                          >
+                            {s.overall_score}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         type="button"

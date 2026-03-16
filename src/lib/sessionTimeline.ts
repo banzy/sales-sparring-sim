@@ -9,6 +9,14 @@ export interface SessionDisplayState {
   pastSessions: NumberedSessionSummary[];
 }
 
+export function isArenaVisibleSession(session: SessionSummary): boolean {
+  return session.overall_score !== null || session.evaluation_insufficient;
+}
+
+export function filterArenaVisibleSessions(sessions: SessionSummary[]): SessionSummary[] {
+  return sessions.filter(isArenaVisibleSession);
+}
+
 function getCreatedAtTimestamp(session: SessionSummary): number {
   if (!session.created_at) {
     return 0;
@@ -42,20 +50,8 @@ export function getCurrentSessionNumber(sessions: SessionSummary[]): number {
   return buildSessionTimeline(sessions).length + 1;
 }
 
-export function getSessionDisplayState(
-  sessions: SessionSummary[],
-  hasLiveProgress: boolean,
-): SessionDisplayState {
+export function getSessionDisplayState(sessions: SessionSummary[]): SessionDisplayState {
   const timeline = buildSessionTimeline(sessions);
-
-  if (!hasLiveProgress && timeline.length > 0) {
-    const currentSession = timeline[timeline.length - 1];
-
-    return {
-      currentSessionNumber: currentSession.sessionNumber,
-      pastSessions: timeline.slice(0, -1),
-    };
-  }
 
   return {
     currentSessionNumber: timeline.length + 1,
