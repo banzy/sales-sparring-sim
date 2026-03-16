@@ -1,6 +1,8 @@
 """Qdrant vector store wrapper."""
 from __future__ import annotations
+
 import uuid
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
@@ -60,6 +62,38 @@ def index_chunks(chunks: list[dict]) -> None:
     client.upsert(collection_name=settings.qdrant_collection, points=points)
 
 
+def _search_points(
+    client: QdrantClient,
+    collection_name: str,
+    query_vector: list[float],
+    top_k: int,
+    qdrant_filter: Filter | None,
+):
+    """Support both legacy and current qdrant-client search APIs."""
+    if hasattr(client, "query_points"):
+        response = client.query_points(
+            collection_name=collection_name,
+            query=query_vector,
+            limit=top_k,
+            query_filter=qdrant_filter,
+            with_payload=True,
+        )
+        return response.points
+
+    if hasattr(client, "search"):
+        return client.search(
+            collection_name=collection_name,
+            query_vector=query_vector,
+            limit=top_k,
+            query_filter=qdrant_filter,
+            with_payload=True,
+        )
+
+    raise AttributeError(
+        "Installed qdrant-client does not support query_points or search"
+    )
+
+
 def search(
     query_vector: list[float],
     top_k: int = 6,
@@ -83,17 +117,17 @@ def search(
         ]
         qdrant_filter = Filter(must=conditions)
 
-    results = client.search(
+    results = _search_points(
+        client=client,
         collection_name=settings.qdrant_collection,
         query_vector=query_vector,
-        limit=top_k,
-        query_filter=qdrant_filter,
-        with_payload=True,
+        top_k=top_k,
+        qdrant_filter=qdrant_filter,
     )
 
     hits = []
     for r in results:
-        payload = r.payload or {}
+        payload = dict(r.payload or {})
         text = payload.pop("text", "")
         hits.append({"text": text, "score": r.score, "metadata": payload})
     return hits
