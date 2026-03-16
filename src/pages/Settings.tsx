@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Volume2, Database, Save, RotateCcw, Trash2, Clock, RefreshCw } from 'lucide-react';
+import { Volume2, Database, Save, RotateCcw, Trash2, Clock, RefreshCw, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -66,6 +66,11 @@ export default function Settings() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [snapshotLabel, setSnapshotLabel] = useState('');
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
+
+  // Generated post state
+  const [generatedPost, setGeneratedPost] = useState<string | null>(null);
+  const [generatingPost, setGeneratingPost] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
 
   useEffect(() => {
     loadSnapshots();
@@ -142,6 +147,25 @@ export default function Settings() {
       setSnapshotError('Could not reach the backend.');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const generatePost = async () => {
+    setGeneratingPost(true);
+    setPostError(null);
+    try {
+      const res = await fetch('/api/generate_post', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setGeneratedPost(data.post || null);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setPostError(err.detail || 'Failed to generate post.');
+      }
+    } catch {
+      setPostError('Could not reach the backend.');
+    } finally {
+      setGeneratingPost(false);
     }
   };
 
@@ -554,6 +578,52 @@ export default function Settings() {
                 ))
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Generated Post Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Generated Post (Optional)
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  A short social-style message created by your agent itself, style like LinkedIn
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={generatePost}
+                disabled={generatingPost}
+              >
+                {generatingPost ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate'
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {postError && (
+              <p className="text-sm text-destructive mb-3">{postError}</p>
+            )}
+            {generatedPost ? (
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm whitespace-pre-wrap">{generatedPost}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Click Generate to create a LinkedIn-style post about the Sales Sparring Agent.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

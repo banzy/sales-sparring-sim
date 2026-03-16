@@ -120,6 +120,8 @@ Two TTS providers are supported and switchable in **Settings**:
 | **Browser TTS**        | Robotic / basic  | Free               | Uses the OS voice engine; works offline |
 | **OpenAI TTS (TTS-1)** | Neural / natural | ~$0.015 / 1K chars | Response is cached on disk; recommended |
 
+**TTS cache (technical):** OpenAI TTS responses are cached on disk in `tts_cache/` using an MD5 hash of `voice:text`. On cache hit, the backend serves the stored MP3 without calling the API, avoiding AI regeneration and reducing cost for repeated "Read Aloud" on the same message.
+
 The OpenAI TTS supports six voice personas: **Alloy**, **Echo**, **Fable**, **Onyx**, **Nova**, **Shimmer** — each with a distinct personality. All are configurable from the Settings page.
 
 ---
@@ -270,6 +272,8 @@ This diagram illustrates how AI agents interact with the databases and each othe
 ---
 
 ## Development & Setup
+
+For a short run guide and architecture diagram, see [docs/README.md](docs/README.md) and [docs/architecture.mmd](docs/architecture.mmd).
 
 ### How can I edit this code?
 

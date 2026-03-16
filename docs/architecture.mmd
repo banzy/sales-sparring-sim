@@ -1,0 +1,62 @@
+%% Sales Sparring Agent — Architecture
+%% How to run: bun dev:all (frontend :8080, backend :8090)
+%% Tech: Vite/React, FastAPI, OpenAI, Perplexity, Qdrant, SQLite
+
+flowchart TB
+    subgraph Frontend["Frontend (Vite + React + Zustand)"]
+        ContextSetup[Context Setup]
+        Briefing[Briefing]
+        Arena[Sparring Arena]
+        Performance[Performance]
+        History[History]
+        Settings[Settings]
+    end
+
+    subgraph Backend["Backend (FastAPI)"]
+        ScenarioBuilder[Scenario Builder]
+        SparringEngine[Sparring Agent]
+        SuggestionEngine[Suggestion Engine]
+        EvalEngine[Evaluation Engine]
+        TTS[/api/tts]
+        STT[/api/stt]
+    end
+
+    subgraph External["External APIs"]
+        Perplexity[Perplexity AI]
+        OpenAI[OpenAI]
+    end
+
+    subgraph Storage["Storage"]
+        SQLite[(SQLite)]
+        Qdrant[(Qdrant)]
+        TTSCache[(tts_cache/)]
+    end
+
+    ContextSetup --> ScenarioBuilder
+    ScenarioBuilder --> Perplexity
+    ScenarioBuilder --> OpenAI
+    ScenarioBuilder --> SQLite
+    ScenarioBuilder --> Qdrant
+
+    Briefing --> Arena
+    Arena --> SparringEngine
+    Arena --> SuggestionEngine
+    Arena --> TTS
+    Arena --> STT
+
+    SparringEngine --> OpenAI
+    SparringEngine --> Qdrant
+    SuggestionEngine --> OpenAI
+    SuggestionEngine --> Qdrant
+
+    TTS --> TTSCache
+    TTS --> OpenAI
+    STT --> OpenAI
+
+    Arena --> EvalEngine
+    EvalEngine --> OpenAI
+    EvalEngine --> SQLite
+    EvalEngine --> Qdrant
+
+    Performance --> SQLite
+    History --> SQLite

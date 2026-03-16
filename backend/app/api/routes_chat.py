@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
-from app.core.llm_client import LLMServiceError
+from app.core.llm_client import LLMClient, LLMServiceError
 from app.models.schemas import (
     SparringChatRequest,
     SparringChatResponse,
@@ -88,4 +88,24 @@ def suggest_response(request: SuggestResponseRequest):
         raise HTTPException(status_code=e.status_code, detail=str(e)) from e
     except Exception as e:
         logger.exception("Unhandled error in suggest_response")
+        raise HTTPException(status_code=500, detail="Unexpected server error.") from e
+
+
+GENERATE_POST_SYSTEM = """You are a professional social media copywriter. Write a short LinkedIn-style post (2-4 sentences) promoting the Sales Sparring Agent — an AI-powered B2B sales roleplay simulator that helps sellers practice against an adversarial AI buyer. Keep it engaging, professional, and suitable for LinkedIn. No hashtags. Output only the post text, nothing else."""
+
+
+@router.post("/generate_post")
+def generate_post():
+    """Generate a short LinkedIn-style post about the Sales Sparring Agent using the main LLM."""
+    try:
+        llm = LLMClient(provider="openai")
+        post = llm.generate(
+            system_prompt=GENERATE_POST_SYSTEM,
+            user_prompt="Write the LinkedIn post now.",
+        )
+        return {"post": post.strip()}
+    except LLMServiceError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e)) from e
+    except Exception as e:
+        logger.exception("Unhandled error in generate_post")
         raise HTTPException(status_code=500, detail="Unexpected server error.") from e
