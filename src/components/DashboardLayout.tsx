@@ -1,20 +1,20 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Outlet } from "react-router-dom";
-import { resolveProjectName } from "@/lib/projects";
-import { useAppStore } from "@/store";
-import { LcdClock } from "@/components/LcdClock";
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
+import { Outlet } from 'react-router-dom';
+import { resolveProjectName } from '@/lib/projects';
+import { useAppStore } from '@/store';
+import { LcdClock } from '@/components/LcdClock';
 
-const APP_NAME = "Sales Sparring Agent";
+const APP_NAME = 'Sales Sparring Agent';
 
 export function DashboardLayout() {
   const { contextSetup } = useAppStore();
   const activeProjectName = contextSetup.scenarioId
     ? resolveProjectName({
-      scenarioId: contextSetup.scenarioId,
-      clientName: contextSetup.clientName,
-    })
-    : "No active project";
+        scenarioId: contextSetup.scenarioId,
+        clientName: contextSetup.clientName,
+      })
+    : 'No active project';
 
   return (
     <SidebarProvider>
@@ -25,10 +25,12 @@ export function DashboardLayout() {
             <div className="flex items-center">
               <SidebarTrigger className="mr-4" />
               <div className="min-w-0 flex items-center gap-2">
-                <span className="text-sm font-semibold tracking-tight">{APP_NAME}</span>
+                <span className="text-sm font-semibold tracking-tight">
+                  {APP_NAME}
+                </span>
                 <span className="text-muted-foreground">·</span>
                 <span className="text-sm text-muted-foreground truncate">
-                  Project: {activeProjectName}
+                  Active Project: {activeProjectName}
                 </span>
               </div>
             </div>

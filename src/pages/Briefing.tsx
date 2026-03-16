@@ -73,6 +73,8 @@ export default function Briefing() {
   const [companyInfoOpen, setCompanyInfoOpen] = useState(false);
   const [companyInfoLoading, setCompanyInfoLoading] = useState(false);
   const [companyInfoError, setCompanyInfoError] = useState<string | null>(null);
+  const [newObjectionTitle, setNewObjectionTitle] = useState("");
+  const [newObjectionDetail, setNewObjectionDetail] = useState("");
 
   const objectionIds = useMemo(
     () => briefing.objections.map((o) => o.id),
@@ -80,6 +82,44 @@ export default function Briefing() {
   );
   const allObjectionsOpen =
     objectionIds.length > 0 && openObjections.length === objectionIds.length;
+
+  const handleAddObjection = () => {
+    const title = newObjectionTitle.trim();
+    const detail = newObjectionDetail.trim();
+
+    if (!title || !detail) return;
+
+    const numericIds = briefing.objections
+      .map((o) => Number.parseInt(o.id, 10))
+      .filter((n) => !Number.isNaN(n));
+    const nextIdNumber =
+      numericIds.length > 0 ? Math.max(...numericIds) + 1 : briefing.objections.length + 1;
+    const nextId = String(nextIdNumber);
+
+    const updatedObjections = [
+      ...briefing.objections,
+      {
+        id: nextId,
+        title,
+        detail,
+      },
+    ];
+
+    setBriefing({ objections: updatedObjections });
+    setNewObjectionTitle("");
+    setNewObjectionDetail("");
+    setOpenObjections((prev) => Array.from(new Set([...prev, nextId])));
+  };
+
+  const handleRemoveObjection = (id: string) => {
+    const confirmed = window.confirm(
+      'Are you sure you want to remove this anticipated objection?',
+    );
+    if (!confirmed) return;
+
+    const updatedObjections = briefing.objections.filter((o) => o.id !== id);
+    setBriefing({ objections: updatedObjections });
+  };
 
   useEffect(() => {
     // Keep state consistent if the objections list changes.
@@ -294,6 +334,37 @@ export default function Briefing() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 space-y-2 rounded-lg border bg-muted/30 p-3">
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                value={newObjectionTitle}
+                onChange={(e) => setNewObjectionTitle(e.target.value)}
+                placeholder="Objection title (e.g. Integration Risk)"
+                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              />
+              <textarea
+                value={newObjectionDetail}
+                onChange={(e) => setNewObjectionDetail(e.target.value)}
+                placeholder="Details about this anticipated objection..."
+                rows={3}
+                className="w-full resize-none rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleAddObjection}
+                disabled={
+                  !newObjectionTitle.trim() || !newObjectionDetail.trim()
+                }
+                className="rounded-lg"
+              >
+                Add objection
+              </Button>
+            </div>
+          </div>
           <Accordion
             type="multiple"
             value={openObjections}
@@ -303,14 +374,29 @@ export default function Briefing() {
             {briefing.objections.map((obj) => (
               <AccordionItem key={obj.id} value={obj.id}>
                 <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                  <div className="flex items-center gap-2 text-[#2172B0]">
-                    <Badge
-                      variant="outline"
-                      className="font-mono text-[10px] rounded-lg"
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-[#2172B0] font-extrabold">
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-[10px] rounded-lg"
+                      >
+                        OBJ-{obj.id}
+                      </Badge>
+                      {obj.title}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveObjection(obj.id);
+                      }}
+                      aria-label={`Remove objection ${obj.title}`}
                     >
-                      OBJ-{obj.id}
-                    </Badge>
-                    {obj.title}
+                      ×
+                    </Button>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="text-sm text-muted-foreground">
